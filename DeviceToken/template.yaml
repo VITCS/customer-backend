@@ -1,0 +1,123 @@
+################################################
+# Template for Tables - DeviceToken
+################################################
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 30
+    Description: CloudWatch Logs retention period for Lambda functions
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+
+Globals:
+  Function:
+    Runtime: nodejs16.x
+    Handler: index.handler
+    Layers:
+      - !Ref NodeLayerArn
+    Timeout: 5
+    Tracing: Active
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        LOG_LEVEL: !Ref LogLevel
+
+################################################
+# Resources
+################################################
+Resources:
+  DeviceTokenTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${Application}-${Environment}-DeviceToken
+      Tags:
+        - Key: "Environment"
+          Value: !Ref Environment
+        - Key: "Application"
+          Value: !Ref Application
+      AttributeDefinitions:
+        - AttributeName: deviceToken
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: deviceToken
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: byUserId
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+    DeletionPolicy: Retain
+
+  ################################################
+  # Functions
+  ################################################
+  ManageDeviceToken:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Application}-${Environment}-ManageDeviceToken-Function
+      Handler: manage_deviceToken.handler
+      CodeUri: ./src
+      MemorySize: 768
+      Tags:
+        Application: !Ref Application
+        Environment: !Ref Environment
+        Module: !Ref Module
+      Environment:
+        Variables:
+          Application: !Ref Application
+          TABLE_NAME: !Ref DeviceTokenTable
+          LOG_LEVEL: !Ref LogLevel
+      
+      Policies:
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+      
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+                - dynamodb:GetItem
+                - dynamodb:Scan
+                - dynamodb:Query
+                - dynamodb:UpdateItem
+              Resource:
+                - !GetAtt DeviceTokenTable.Arn
+
+  ManageDeviceTokenLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ManageDeviceToken}"
+      RetentionInDays: !Ref RetentionInDays

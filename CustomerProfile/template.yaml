@@ -1,0 +1,155 @@
+################################################
+# Template for Tables - CustomerUser
+################################################
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 30
+    Description: CloudWatch Logs retention period for Lambda functions
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+  CriticalSnsTopicName:
+    Type: String
+    Description: SNS Topic Name
+  EventBusName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Event Bus Name
+
+Globals:
+  Function:
+    Runtime: nodejs16.x
+    Handler: index.handler
+    Layers:
+      - !Ref NodeLayerArn
+    Timeout: 5
+    Tracing: Active
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        LOG_LEVEL: !Ref LogLevel
+
+Conditions:
+  IsProd: !Equals [!Ref Environment, prd]
+  IsPrimary: !Equals [!Ref AWS::Region, "us-east-1"]
+
+Mappings:
+ RegionSuffix:
+    "us-east-1":
+      SFX1: ""
+    "us-west-2":
+      SFX1: "-us-west-2"
+################################################
+# Resources
+################################################
+Resources:
+  
+  CustomerProfileTable:
+    Type: AWS::DynamoDB::GlobalTable
+    DeletionPolicy: Retain
+    Condition: IsPrimary
+    Properties:
+      TableName: !Sub ${Application}-${Environment}-CustomerProfile
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: byEmail
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+      Replicas:
+        - Region: "us-east-1"
+          PointInTimeRecoverySpecification:
+            PointInTimeRecoveryEnabled: true
+          Tags:
+            - Key: "Environment"
+              Value: !Ref Environment
+            - Key: "Application"
+              Value: !Ref Application
+        - !If 
+          - IsProd
+          - Region: "us-west-2"
+            PointInTimeRecoverySpecification:
+              PointInTimeRecoveryEnabled: true
+            Tags:
+              - Key: "Environment"
+                Value: !Ref Environment
+              - Key: "Application"
+                Value: !Ref Application
+          - !Ref "AWS::NoValue"
+
+  CustomerProfileTableStreamEventMapping:
+    Condition: IsPrimary
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      StartingPosition: TRIM_HORIZON
+      EventSourceArn: !Sub ${CustomerProfileTable.StreamArn}
+      FunctionName: !Sub ${Application}-${Environment}-ElasticSearch-Streaming-Lambda-Function
+      MaximumRetryAttempts: 1
+
+
+  ################################################
+  # S3Bucket
+  ################################################
+  CustomerUploadBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: 
+        !Sub
+          - "${Name}${Suffix}"
+          - Name: !Sub "${AWS::AccountId}-${Application}-${Environment}-customer-photos"
+            Suffix: !FindInMap [RegionSuffix, !Ref "AWS::Region", SFX1]
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+              - PUT
+              - HEAD
+            AllowedOrigins:
+              - "*"
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Application}-${Environment}-Customer-S3Notification-Function            
+          - Event: s3:ObjectRemoved:Delete
+            Function: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Application}-${Environment}-Customer-S3Notification-Function
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+

@@ -1,0 +1,88 @@
+################################################
+# Template for Functions - CustomerPayment
+################################################
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: 'AWS::Serverless-2016-10-31'
+
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev2
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 30
+    Description: CloudWatch Logs retention period for Lambda functions
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+
+Globals:
+  Function:
+    Runtime: nodejs16.x
+    Handler: index.handler
+    Layers:
+      - !Ref NodeLayerArn 
+    Timeout: 5
+    Tracing: Active
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        LOG_LEVEL: !Ref LogLevel
+
+################################################
+# Resources
+################################################
+Resources:
+
+################################################
+# Functions
+################################################
+  ManageCustomerPayment:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Application}-${Environment}-ManageCustomerPayment-Function
+      Handler: manage_customerpayment.handler
+      CodeUri: ./src
+      MemorySize: 768
+      Tags:
+        Application: !Ref Application
+        Environment: !Ref Environment
+        Module: !Ref Module
+      Environment: 
+        Variables:
+          Application: !Ref Application
+          TABLE_NAME: !Sub ${Application}-${Environment}-CustomerPayment
+          LOG_LEVEL: !Ref LogLevel      
+      Policies:
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy     
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+                - dynamodb:GetItem
+                - dynamodb:Scan
+                - dynamodb:Query
+                - dynamodb:UpdateItem
+              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-CustomerPayment
+        
+  ManageCustomerPaymentLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ManageCustomerPayment}"
+      RetentionInDays: !Ref RetentionInDays

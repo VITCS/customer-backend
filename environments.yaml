@@ -1,0 +1,25 @@
+dev:
+  parameters:
+    LogLevel: DEBUG
+    RetentionInDays: "7"
+
+tests:
+  parameters:
+    LogLevel: DEBUG
+    RetentionInDays: "30"
+
+staging:
+  parameters:
+    LogLevel: DEBUG
+    RetentionInDays: "30"
+  flags:
+    can-tests-integ: false
+
+prod:
+  parameters:
+    LogLevel: INFO
+    RetentionInDays: "30"
+  flags:
+    can-tests-integ: false
+    can-tests-e2e: false
+    is-prod: true

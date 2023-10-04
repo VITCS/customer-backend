@@ -1,0 +1,67 @@
+version = 0.1
+
+[dev]
+[dev.deploy]
+[dev.deploy.parameters]
+stack_name = "spirits-dev-customer-customerprofile"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-dev-customer-customerprofile"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"dev\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/dev/shared/nodelayer/arn\" CustomerUserPoolId=\"/spirits/dev/platform/customeruserpool/id\" CriticalSnsTopicName=\"sns-cloudwatch-alerts\" EventBusName=\"/spirits/dev/cognitoUserEventBus/name\""
+
+[devDep]
+[devDep.deploy]
+[devDep.deploy.parameters]
+stack_name = "spirits-dev-customer-customerprofile-dep"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-dev-customer-customerprofile-dep"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"dev\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/dev/shared/nodelayer/arn\" CustomerUserPoolId=\"/spirits/dev/platform/customeruserpool/id\" CriticalSnsTopicName=\"sns-cloudwatch-alerts\" EventBusName=\"/spirits/dev/cognitoUserEventBus/name\""
+
+[sit]
+[sit.deploy]
+[sit.deploy.parameters]
+stack_name = "spirits-sit-customer-customerprofile"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-sit-customer-customerprofile"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"sit\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/sit/shared/nodelayer/arn\" CustomerUserPoolId=\"/spirits/sit/platform/customeruserpool/id\" CriticalSnsTopicName=\"sns-cloudwatch-alerts\" EventBusName=\"/spirits/sit/cognitoUserEventBus/name\""
+
+[sitDep]
+[sitDep.deploy]
+[sitDep.deploy.parameters]
+stack_name = "spirits-sit-customer-customerprofile-dep"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-sit-customer-customerprofile-dep"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"sit\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/sit/shared/nodelayer/arn\" CustomerUserPoolId=\"/spirits/sit/platform/customeruserpool/id\" CriticalSnsTopicName=\"sns-cloudwatch-alerts\" EventBusName=\"/spirits/sit/cognitoUserEventBus/name\""
+
+[prd]
+[prd.deploy]
+[prd.deploy.parameters]
+stack_name = "spirits-prd-customer-customerprofile"
+s3_bucket = "409907184267-spirits-prd-samdeploy"
+s3_prefix = "spirits-prd-customer-customerprofile"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"prd\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/prd/shared/nodelayer/arn\" CustomerUserPoolId=\"/spirits/prd/platform/customeruserpool/id\" CriticalSnsTopicName=\"sns-cloudwatch-alerts\" EventBusName=\"/spirits/prd/cognitoUserEventBus/name\""
+
+[prdDep]
+[prdDep.deploy]
+[prdDep.deploy.parameters]
+stack_name = "spirits-prd-customer-customerprofile-dep"
+s3_bucket = "409907184267-spirits-prd-samdeploy"
+s3_prefix = "spirits-prd-customer-customerprofile-dep"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"prd\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/prd/shared/nodelayer/arn\" CustomerUserPoolId=\"/spirits/prd/platform/customeruserpool/id\" CriticalSnsTopicName=\"sns-cloudwatch-alerts\" EventBusName=\"/spirits/prd/cognitoUserEventBus/name\""

@@ -1,0 +1,34 @@
+version = 0.1
+
+[dev]
+[dev.deploy]
+[dev.deploy.parameters]
+stack_name = "spirits-dev-customer-deviceToken"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-dev-customer-deviceToken"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"dev\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/dev/shared/nodelayer/arn\""
+
+[sit]
+[sit.deploy]
+[sit.deploy.parameters]
+stack_name = "spirits-sit-customer-deviceToken"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-sit-customer-deviceToken"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"sit\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/sit/shared/nodelayer/arn\""
+
+[prd]
+[prd.deploy]
+[prd.deploy.parameters]
+stack_name = "spirits-prd-customer-deviceToken"
+s3_bucket = "409907184267-spirits-prd-samdeploy"
+s3_prefix = "spirits-prd-customer-deviceToken"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"prd\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/prd/shared/nodelayer/arn\""

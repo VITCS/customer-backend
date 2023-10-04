@@ -1,0 +1,110 @@
+################################################
+# Template for Tables - CustomerPayment
+################################################
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: 'AWS::Serverless-2016-10-31'
+
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev2
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 30
+    Description: CloudWatch Logs retention period for Lambda functions
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+
+Globals:
+  Function:
+    Runtime: nodejs16.x
+    Handler: index.handler
+    Layers:
+      - !Ref NodeLayerArn 
+    Timeout: 5
+    Tracing: Active
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        LOG_LEVEL: !Ref LogLevel
+
+Conditions:
+  IsProd: !Equals [!Ref Environment, prd]
+  IsPrimary: !Equals [!Ref AWS::Region, "us-east-1"]
+
+################################################
+# Resources
+################################################
+Resources:
+
+  CustomerPaymentTable:
+    Type: AWS::DynamoDB::GlobalTable
+    DeletionPolicy: Retain
+    Condition: IsPrimary
+    Properties:
+      TableName: !Sub ${Application}-${Environment}-CustomerPayment
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: byCustomerProfileId
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+      Replicas:
+        - Region: "us-east-1"
+          PointInTimeRecoverySpecification:
+            PointInTimeRecoveryEnabled: true
+          Tags:
+            - Key: "Environment"
+              Value: !Ref Environment
+            - Key: "Application"
+              Value: !Ref Application
+        - !If 
+          - IsProd
+          - Region: "us-west-2"
+            PointInTimeRecoverySpecification:
+              PointInTimeRecoveryEnabled: true
+            Tags:
+              - Key: "Environment"
+                Value: !Ref Environment
+              - Key: "Application"
+                Value: !Ref Application
+          - !Ref "AWS::NoValue"
+
+  CustomerPaymentTableStreamEventMapping:
+    Condition: IsPrimary
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      StartingPosition: TRIM_HORIZON
+      EventSourceArn: !Sub ${CustomerPaymentTable.StreamArn}
+      FunctionName: !Sub ${Application}-${Environment}-ElasticSearch-Streaming-Lambda-Function
+      MaximumRetryAttempts: 1
+
+    
+

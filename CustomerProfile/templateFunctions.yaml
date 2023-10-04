@@ -1,0 +1,304 @@
+################################################
+# Template for Tables - CustomerUser
+################################################
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 30
+    Description: CloudWatch Logs retention period for Lambda functions
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+  CustomerUserPoolId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Customer user pool id
+  CriticalSnsTopicName:
+    Type: String
+    Description: SNS Topic Name
+  EventBusName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: EventBridge Event Bus Name
+
+Globals:
+  Function:
+    Runtime: nodejs16.x
+    Handler: index.handler
+    Layers:
+      - !Ref NodeLayerArn
+    Timeout: 5
+    Tracing: Active
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        LOG_LEVEL: !Ref LogLevel
+
+Mappings:
+  RegionSuffix:
+    "us-east-1":
+      SFX1: ""
+    "us-west-2":
+      SFX1: "-us-west-2"
+################################################
+# Resources
+################################################
+Resources:
+  ################################################
+  # Functions
+  ################################################
+  ManageCustomerProfile:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Application}-${Environment}-ManageCustomerProfile-Function
+      Handler: manage_customerprofile.handler
+      CodeUri: ./src
+      MemorySize: 768
+      Tags:
+        Application: !Ref Application
+        Environment: !Ref Environment
+        Module: !Ref Module
+      Environment:
+        Variables:
+          Application: !Ref Application
+          TABLE_NAME: !Sub ${Application}-${Environment}-CustomerProfile
+          CONTACT_TABLE_NAME: !Sub ${Application}-${Environment}-CustomerContact
+          OCCASION_TABLE_NAME: !Sub ${Application}-${Environment}-CustomerOccasion
+          ADDRESS_TABLE_NAME: !Sub ${Application}-${Environment}-CustomerAddress
+          CUSTOMER_USER_POOL_ID: !Sub ${CustomerUserPoolId}
+          LOG_LEVEL: !Ref LogLevel
+          EVENT_BUS_NAME: !Ref EventBusName
+      Policies:
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+                - dynamodb:GetItem
+                - dynamodb:Scan
+                - dynamodb:Query
+                - dynamodb:UpdateItem
+                - cognito-idp:*
+                - events:putEvents
+                - ssm:*
+              Resource:
+                - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-CustomerProfile"
+                - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-CustomerContact"
+                - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-CustomerAddress"
+                - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-CustomerOccasion"
+                - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-CustomerContact/index/byCustomerProfileId"
+                - !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CustomerUserPoolId}"
+                - !Sub "arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:event-bus/${EventBusName}"
+                - !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Application}/${Environment}/cognitoUserEventBus/name"
+                # - !Sub arn:aws:cognito-idp:us-west-2:${AWS::AccountId}:userpool/us-west-2_3tB8878IH
+                # - !Sub ${EventBusName}
+
+  ManageCustomerProfileLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ManageCustomerProfile}"
+      RetentionInDays: !Ref RetentionInDays
+
+  LambdaCriticalErrorAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      ActionsEnabled: true
+      AlarmDescription: !Sub "Lambda Critical Error Alarm for ${ManageCustomerProfile}"
+      AlarmName: !Sub "${ManageCustomerProfile}-Lambda-Critical-Error-Alarm"
+      AlarmActions:
+        - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${CriticalSnsTopicName}"
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 0.25
+      DatapointsToAlarm: 1
+      Metrics:
+        - Id: !Sub "errorPercentage"
+          Expression: "errors / requests * 100"
+          Label: !Sub "${ManageCustomerProfile}-ErrorPercentage"
+          ReturnData: true
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: "AWS/Lambda"
+              MetricName: "Errors"
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Sub "${ManageCustomerProfile}"
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: requests
+          MetricStat:
+            Metric:
+              Namespace: "AWS/Lambda"
+              MetricName: "Invocations"
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Sub "${ManageCustomerProfile}"
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+      TreatMissingData: missing
+
+  LambdaErrorLogsFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Sub "${ManageCustomerProfileLogGroup}"
+      FilterPattern: "?Error"
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricNamespace: "LambdaErrors"
+          MetricName: !Sub "${ManageCustomerProfile}"
+
+  ################################################
+  # S3Bucket
+  ################################################
+  S3TriggerInvokePermission:
+    Type: AWS::Lambda::Permission
+    DependsOn: S3UploadCustomerTrigger
+    Properties:
+      FunctionName: !GetAtt S3UploadCustomerTrigger.Arn
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub
+        - "arn:aws:s3:::${Name}${Suffix}"
+        - Name: !Sub "${AWS::AccountId}-${Application}-${Environment}-customer-photos"
+          Suffix: !FindInMap [RegionSuffix, !Ref "AWS::Region", SFX1]
+
+  S3UploadCustomerTrigger:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Application}-${Environment}-Customer-S3Notification-Function
+      Handler: s3Notification.handler
+      CodeUri: ./src
+      MemorySize: 768
+      Tags:
+        Application: !Ref Application
+        Environment: !Ref Environment
+        Module: !Ref Module
+      Environment:
+        Variables:
+          TABLE_NAME: !Sub ${Application}-${Environment}-CustomerProfile
+          BUCKET_NAME: !Sub
+            - "${Name}${Suffix}"
+            - Name: !Sub "${AWS::AccountId}-${Application}-${Environment}-customer-photos"
+              Suffix: !FindInMap [RegionSuffix, !Ref "AWS::Region", SFX1]
+          LOG_LEVEL: !Ref LogLevel
+      Policies:
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - "dynamodb:GetItem"
+                - "dynamodb:PutItem"
+                - "dynamodb:UpdateItem"
+              Resource: !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-CustomerProfile"
+
+  S3SignedURLFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Application}-${Environment}-Customer-S3SignedURL-Function
+      Handler: s3signedurl.handler
+      CodeUri: ./src
+      MemorySize: 768
+      Tags:
+        Application: !Ref Application
+        Environment: !Ref Environment
+        Module: !Ref Module
+      Environment:
+        Variables:
+          Application: !Ref Application
+          CUSTOMER_BUCKET_NAME: !Sub
+            - "${Name}${Suffix}"
+            - Name: !Sub "${AWS::AccountId}-${Application}-${Environment}-customer-photos"
+              Suffix: !FindInMap [RegionSuffix, !Ref "AWS::Region", SFX1]
+          LOG_LEVEL: !Ref LogLevel
+      Policies:
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - "s3:PutObject"
+                - "s3:GetObject"
+              Resource:
+                - !Sub
+                  - "arn:aws:s3:::${Name}${Suffix}/*"
+                  - Name: !Sub "${AWS::AccountId}-${Application}-${Environment}-*-photos"
+                    Suffix: !FindInMap [RegionSuffix, !Ref "AWS::Region", SFX1]
+                - !Sub
+                  - "arn:aws:s3:::${Name}${Suffix}"
+                  - Name: !Sub "${AWS::AccountId}-${Application}-${Environment}-*-photos"
+                    Suffix: !FindInMap [RegionSuffix, !Ref "AWS::Region", SFX1]
+
+  S3SignedURLStoreLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${S3SignedURLFunction}"
+      RetentionInDays: !Ref RetentionInDays
+
+  DeletePhotosFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Application}-${Environment}-Customer-DeletePhotos-Function
+      Handler: deletePhoto.handler
+      CodeUri: ./src
+      MemorySize: 768
+      Tags:
+        Application: !Ref Application
+        Environment: !Ref Environment
+        Module: !Ref Module
+      Environment:
+        Variables:
+          Application: !Ref Application
+          Environment: !Ref Environment
+          CUSTOMER_BUCKET_NAME: !Sub
+            - "${Name}${Suffix}"
+            - Name: !Sub "${AWS::AccountId}-${Application}-${Environment}-customer-photos"
+              Suffix: !FindInMap [RegionSuffix, !Ref "AWS::Region", SFX1]
+          LOG_LEVEL: !Ref LogLevel
+      Policies:
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - "s3:PutObject"
+                - "s3:GetObject"
+                - "s3:DeleteObject"
+              Resource:
+                - !Sub
+                  - "arn:aws:s3:::${Name}${Suffix}/*"
+                  - Name: !Sub "${AWS::AccountId}-${Application}-${Environment}-*-photos"
+                    Suffix: !FindInMap [RegionSuffix, !Ref "AWS::Region", SFX1]
+                - !Sub
+                  - "arn:aws:s3:::${Name}${Suffix}"
+                  - Name: !Sub "${AWS::AccountId}-${Application}-${Environment}-*-photos"
+                    Suffix: !FindInMap [RegionSuffix, !Ref "AWS::Region", SFX1]
+
+  DeletePhotosLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${DeletePhotosFunction}"
+      RetentionInDays: !Ref RetentionInDays
