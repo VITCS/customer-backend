@@ -1,0 +1,67 @@
+version = 0.1
+
+[dev]
+[dev.deploy]
+[dev.deploy.parameters]
+stack_name = "spirits-dev-customer-orderShipment"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-dev-customer-orderShipment"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"dev\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/dev/shared/nodelayer/arn\" EventBusName=\"/spirits/dev/orderEventBus/name\" UpdateNotificationEventBusName=\"/spirits/dev/updateNotification/name\" PaymentEventBusName=\"/spirits/dev/capturePaymentEventBus/name\""
+
+[devdep]
+[devdep.deploy]
+[devdep.deploy.parameters]
+stack_name = "spirits-dev-customer-manageOrderShipment"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-dev-customer-manageOrderShipment"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"dev\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/dev/shared/nodelayer/arn\" EventBusName=\"/spirits/dev/orderEventBus/name\" UpdateNotificationEventBusName=\"/spirits/dev/updateNotification/name\" PaymentEventBusName=\"/spirits/dev/capturePaymentEventBus/name\""
+
+[sit]
+[sit.deploy]
+[sit.deploy.parameters]
+stack_name = "spirits-sit-customer-orderShipment"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-sit-customer-orderShipment"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"sit\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/sit/shared/nodelayer/arn\" EventBusName=\"/spirits/dev/orderEventBus/name\" UpdateNotificationEventBusName=\"/spirits/sit/updateNotification/name\" PaymentEventBusName=\"/spirits/sit/capturePaymentEventBus/name\""
+
+[sitdep]
+[sitdep.deploy]
+[sitdep.deploy.parameters]
+stack_name = "spirits-sit-customer-manageOrderShipment"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-sit-customer-manageOrderShipment"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"sit\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/sit/shared/nodelayer/arn\" EventBusName=\"/spirits/dev/orderEventBus/name\" UpdateNotificationEventBusName=\"/spirits/sit/updateNotification/name\" PaymentEventBusName=\"/spirits/sit/capturePaymentEventBus/name\""
+
+[prd]
+[prd.deploy]
+[prd.deploy.parameters]
+stack_name = "spirits-prd-customer-orderShipment"
+s3_bucket = "409907184267-spirits-prd-samdeploy"
+s3_prefix = "spirits-prd-customer-orderShipment"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"prd\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/prd/shared/nodelayer/arn\" EventBusName=\"/spirits/prd/orderEventBus/name\" UpdateNotificationEventBusName=\"/spirits/prd/updateNotification/name\" PaymentEventBusName=\"/spirits/prd/capturePaymentEventBus/name\""
+
+[prddep]
+[prddep.deploy]
+[prddep.deploy.parameters]
+stack_name = "spirits-prd-customer-manageOrderShipment"
+s3_bucket = "409907184267-spirits-prd-samdeploy"
+s3_prefix = "spirits-prd-customer-manageOrderShipment"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"prd\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/prd/shared/nodelayer/arn\" EventBusName=\"/spirits/prd/orderEventBus/name\" UpdateNotificationEventBusName=\"/spirits/prd/updateNotification/name\" PaymentEventBusName=\"/spirits/prd/capturePaymentEventBus/name\""

@@ -1,0 +1,126 @@
+################################################
+# Template for Tables - Order
+################################################
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 30
+    Description: CloudWatch Logs retention period for Lambda functions
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+  EventBusName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Event Bus Name
+  UpdateNotificationEventBusName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Update Notification Event Bus Name
+  PaymentEventBusName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Payment Event Bus
+
+Globals:
+  Function:
+    Runtime: nodejs16.x
+    Handler: index.handler
+    Layers:
+      - !Ref NodeLayerArn
+    Timeout: 5
+    Tracing: Active
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        LOG_LEVEL: !Ref LogLevel
+
+################################################
+# Resources
+################################################
+Resources:
+  ################################################
+  # Functions
+  ################################################
+  ManageOrderShipment:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Application}-${Environment}-ManageOrderShipment-Function
+      Handler: manage_orderShipment.handler
+      CodeUri: ./src
+      MemorySize: 768
+      Tags:
+        Application: !Ref Application
+        Environment: !Ref Environment
+        Module: !Ref Module
+      Environment:
+        Variables:
+          Application: !Ref Application
+          # TABLE_NAME: !Ref OrderShipmentTable
+          TABLE_NAME: !Sub ${Application}-${Environment}-OrderShipment
+          ORDER_TABLE: !Sub ${Application}-${Environment}-Order
+          LOG_LEVEL: !Ref LogLevel
+          EVENT_BUS_NAME: !Ref EventBusName
+          PAYMENT_EVENT_BUS_NAME: !Ref PaymentEventBusName
+          PRD_REJECTION_EVENT_BUS_NAME: !Sub ${Application}-${Environment}-rejectionNotification
+          PRD_UPDATE_EVENT_BUS_NAME: !Sub ${Application}-${Environment}-updateNotification
+          PRD_EVENT_BUS_SOURCE: !Sub ${Application}-${Environment}-ManageOrderShipment-Function
+      Policies:
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+                - dynamodb:GetItem
+                - dynamodb:Scan
+                - dynamodb:Query
+                - dynamodb:UpdateItem
+                - events:putEvents
+              Resource:
+                - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-OrderShipment"
+                - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-OrderShipment/index/byOrderId"
+                - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-Order"
+                - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/spirits-prd-rejectionNotification"
+                - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/spirits-prd-updateNotification"
+                - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/spirits-prd-capturePayment"
+                - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/update-order"
+                - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/rejection-notification"
+                - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/capture-payment"
+
+  ManageOrderLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ManageOrderShipment}"
+      RetentionInDays: !Ref RetentionInDays
+
+  UpdateOrderShipmentNotificationRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref UpdateNotificationEventBusName
+      EventPattern:
+        source:
+          - !Sub ${Application}-${Environment}-ManageOrderShipment-Function
+        detail-type:
+          - Update-Notification
+      Targets:
+        - Id: update-notification
+          Arn: !GetAtt ManageOrderShipment.Arn

@@ -1,0 +1,218 @@
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Test Email</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+    crossorigin="anonymous"
+  />
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+    crossorigin="anonymous"
+  ></script>
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.0.3/css/font-awesome.css"
+    rel="stylesheet"
+  />
+  <link href="./t1.css" rel="stylesheet" />
+
+  <style>
+    body {
+      background-color: #bbdefb;
+    }
+
+    .bg-black {
+      background-color: #2f3b59;
+    }
+
+    .navbar-brand {
+      padding: 11px 20px;
+    }
+
+    .active {
+      background-color: blue;
+    }
+
+    .navbar-nav {
+      width: 100%;
+    }
+
+    .nav-link {
+      color: #fff !important;
+    }
+
+    .nav-item {
+      padding: 8px 20px;
+      text-align: center;
+    }
+
+    .nav-item:hover {
+      background-color: blue;
+    }
+
+    .right {
+      margin-left: auto;
+    }
+
+    .navbar-collapse.collapse.in {
+      display: block !important;
+    }
+
+    @media (max-width: 992px) {
+      .right {
+        margin-left: 0;
+      }
+
+      .nav-item {
+        width: 100%;
+        text-align: left;
+      }
+    }
+  </style>
+  <div class="container mt-5 mb-5">
+    <div class="row d-flex justify-content-center">
+      <div class="col-md-8">
+        <div class="card">
+          <div class="text-left logo p-2 px-5">
+            <img
+              src="https://www.1800spirits.com/static/media/small.a0cceb78.svg"
+            />
+          </div>
+          <div class="invoice p-5">
+            <h5>Your order Confirmed!</h5>
+            <span class="font-weight-bold d-block mt-4"
+              >Hello, <%=order.customerProfile.firstName %></span
+            >
+            <span class="font-weight-bold d-block mt-4"
+              >Hello, <%=order.customerProfile.lastName %></span
+            >
+            <span>You order has been confirmed</span>
+            <div
+              class="payment border-top mt-3 mb-3 border-bottom table-responsive"
+            >
+              <table class="table table-borderless">
+                <tbody>
+                  <tr>
+                    <td>
+                      <div class="py-2">
+                        <span class="d-block text-muted">Order Date</span>
+                        <span> <%= order.createdAt %> </span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="py-2">
+                        <span class="d-block text-muted">Order No</span>
+                        <span> <%= order.orderId %> </span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="product border-bottom table-responsive">
+              <div>Shipment ID: <%= order.id %></div>
+              <table class="table table-borderless">
+                <tbody>
+                  <% order.orderLineItems.forEach(function(item){ %>
+                  <tr>
+                    <td width="20%">
+                      <img
+                        src="
+                                    <%= item.imgUrl  %>"
+                        width="90"
+                      />
+                    </td>
+                    <td width="60%">
+                      <span class="font-weight-bold">
+                        <%= item.productName %>
+                      </span>
+                      <div class="product-qty">
+                        <span class="d-block"> <%= item.qtyPurchased %> </span>
+                      </div>
+                    </td>
+                    <td width="20%">
+                      <div class="text-right">
+                        <span class="font-weight-bold">
+                          <%= item.totalPrice %>
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+            <div class="row d-flex justify-content-end">
+              <div class="col-md-5">
+                <table class="table table-borderless">
+                  <tbody class="totals">
+                    <tr>
+                      <td>
+                        <div class="text-left">
+                          <span class="text-muted">Subtotal</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="text-right">
+                          <span> <%= order.subTotalProductAmount %> </span>
+                        </div>
+                      </td>
+                      order
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="text-left">
+                          <span class="text-muted">Service Charges</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="text-right">
+                          <span> <%= order.subTotalServiceCharge %> </span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="text-left">
+                          <span class="text-muted">Tax</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="text-right">
+                          <span> <%= order.subTotalTaxAmount %> </span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr class="border-top border-bottom">
+                      <td>
+                        <div class="text-left">
+                          <span class="font-weight-bold">Total</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="text-right">
+                          <span class="font-weight-bold">
+                            <%= order.totalCharges %>
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <p>
+              We will be sending confirmation email when the item shipped
+              successfully!
+            </p>
+            <p class="font-weight-bold mb-0">Thanks for shopping with us!</p>
+            <span>1800 Spirits Team</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</head>
