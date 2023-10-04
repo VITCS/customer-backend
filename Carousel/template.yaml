@@ -1,0 +1,182 @@
+################################################
+# Template for Tables - CustomerUser
+################################################
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 30
+    Description: CloudWatch Logs retention period for Lambda functions
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+  CriticalSnsTopicName:
+    Type: String
+    Description: SNS Topic Name
+
+Globals:
+  Function:
+    Runtime: nodejs16.x
+    Handler: index.handler
+    Layers:
+      - !Ref NodeLayerArn
+    Timeout: 5
+    Tracing: Active
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        LOG_LEVEL: !Ref LogLevel
+
+Conditions:
+  IsProd: !Equals [!Ref Environment, prd]
+  IsPrimary: !Equals [!Ref AWS::Region, "us-east-1"]
+
+Mappings:
+ RegionSuffix:
+    "us-east-1":
+      SFX1: ""
+    "us-west-2":
+      SFX1: "-us-west-2"
+
+  ################################################
+  # Functions
+  ################################################
+Resources:
+  ManageCarouselData:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Application}-${Environment}-ManageCarouselData-Function
+      Handler: manage_carouseldata.handler
+      CodeUri: ./src
+      MemorySize: 768
+      Tags:
+        Application: !Ref Application
+        Environment: !Ref Environment
+        Module: !Ref Module
+      Environment:
+        Variables:
+          BUCKET_NAME: 
+            !Sub
+              - "${Name}${Suffix}"
+              - Name: !Sub "${AWS::AccountId}-${Application}-${Environment}-carousel"
+                Suffix: !FindInMap [RegionSuffix, !Ref "AWS::Region", SFX1]
+      Policies:
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:*
+              Resource:
+                - !Sub 
+                    - "arn:aws:s3:::${Name}${Suffix}"
+                    - Name: !Sub "${AWS::AccountId}-${Application}-${Environment}-carousel"
+                      Suffix: !FindInMap [RegionSuffix, !Ref "AWS::Region", SFX1]
+                - !Sub 
+                    - "arn:aws:s3:::${Name}${Suffix}/*"
+                    - Name: !Sub "${AWS::AccountId}-${Application}-${Environment}-carousel"
+                      Suffix: !FindInMap [RegionSuffix, !Ref "AWS::Region", SFX1]
+
+  ManageCarouselDataLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ManageCarouselData}"
+      RetentionInDays: !Ref RetentionInDays
+
+  LambdaCriticalErrorAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      ActionsEnabled: true
+      AlarmDescription: !Sub "Lambda Critical Error Alarm for ${ManageCarouselData}"
+      AlarmName: !Sub "${ManageCarouselData}-Lambda-Critical-Error-Alarm"
+      AlarmActions:
+        - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${CriticalSnsTopicName}"
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: 0.25
+      DatapointsToAlarm: 1
+      Metrics:
+        - Id: !Sub "errorPercentage"
+          Expression: "errors / requests * 100"
+          Label: !Sub "${ManageCarouselData}-ErrorPercentage"
+          ReturnData: true
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: "AWS/Lambda"
+              MetricName: "Errors"
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Sub "${ManageCarouselData}"
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: requests
+          MetricStat:
+            Metric:
+              Namespace: "AWS/Lambda"
+              MetricName: "Invocations"
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Sub "${ManageCarouselData}"
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+      TreatMissingData: missing
+
+  LambdaErrorLogsFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Sub "${ManageCarouselDataLogGroup}"
+      FilterPattern: "?Error"
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricNamespace: "LambdaErrors"
+          MetricName: !Sub "${ManageCarouselData}"
+
+  CustomerUploadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: 
+        !Sub
+          - "${Name}${Suffix}"
+          - Name: !Sub "${AWS::AccountId}-${Application}-${Environment}-carousel"
+            Suffix: !FindInMap [RegionSuffix, !Ref "AWS::Region", SFX1]
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+              - PUT
+              - HEAD
+            AllowedOrigins:
+              - "*"
+      # NotificationConfiguration:
+      #   LambdaConfigurations:
+      #     - Event: s3:ObjectCreated:*
+      #       Function: !GetAtt S3UploadCustomerTrigger.Arn
+      #     - Event: s3:ObjectRemoved:Delete
+      #       Function: !GetAtt S3UploadCustomerTrigger.Arn
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
