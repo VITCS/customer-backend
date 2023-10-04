@@ -1,0 +1,92 @@
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 1
+    Description: CloudWatch Logs retention period for Lambda functions
+  EventBusName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: EventBridge Event Bus Name
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+  QueryLimit:
+    Type: Number
+    Default: 20
+    Description: Maximum number of items to return from a single query
+  ApiId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: API Id
+  SearchItem:
+    Type: String
+    Description: Search Item i.e. Table to search
+    Default: ${Appplication}-${Environment}-SearchStore
+##############################################################
+# Data Sources for SearchStore
+##############################################################
+Resources:
+  ##########################
+  # Roles #
+  ##########################
+  ManageSearchStoreFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ManageSearchStoreFunctionRole
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Application}-${Environment}-SearchStore-Function
+
+  ##########################
+  # Manage SearchStore #
+  ##########################
+  ManageSearchStoreDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !Ref ApiId
+      Name: ManageSearchStore
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt ManageSearchStoreFunctionRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Application}-${Environment}-SearchStore-Function
+
+  SearchStoreResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt ManageSearchStoreDataSource.Name
+      FieldName: searchStore
+      TypeName: Query
+      RequestMappingTemplate: !Sub |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": {
+            "body": $util.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: |
+        $utils.toJson($ctx.result)

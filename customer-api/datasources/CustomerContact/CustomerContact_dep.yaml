@@ -1,0 +1,180 @@
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 1
+    Description: CloudWatch Logs retention period for Lambda functions
+  EventBusName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: EventBridge Event Bus Name
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+  QueryLimit:
+    Type: Number
+    Default: 20
+    Description: Maximum number of items to return from a single query
+  ApiId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: API Id
+  SearchItem:
+    Type: String
+    Description: Search Item i.e. Table to search
+    Default: ${Application}-${Environment}-CustomerContact
+##############################################################
+# Data Sources for Merchant User Store
+##############################################################
+Resources:
+  ########################
+  # Get Delivery Address  #
+  ########################
+  GetDeliveryAddress:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: CustomerAddressTable
+      FieldName: deliveryAddress
+      TypeName: CustomerContact
+      RequestMappingTemplate: |
+        #if( $util.isNull($ctx.source.userId) )
+          #return
+        #else
+        {
+          "version" : "2017-02-28",
+          "operation" : "Query",
+          "query" : {
+              ## Provide a query expression. **
+              "expression": "customerContactId = :customerContactId",
+              "expressionValues" : {
+                  ":customerContactId" : $util.dynamodb.toDynamoDBJson($ctx.source.id)
+              }
+          },
+          "index": "byCustomerContactId",
+          "select": "ALL_ATTRIBUTES"
+        }
+        #end
+      ResponseMappingTemplate: |
+        #if( $ctx.error )
+        $util.error($ctx.error.message, $ctx.error.type)
+        #else
+        $util.toJson($ctx.result)
+        #end
+
+  ########################
+  # Get Customer Occasion  #
+  ########################
+  GetCustomerOccasion:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: CustomerOccasionTable
+      FieldName: occasions
+      TypeName: CustomerContact
+      RequestMappingTemplate: |
+        #if( $util.isNull($ctx.source.userId) )
+          #return
+        #else
+        {
+          "version" : "2017-02-28",
+          "operation" : "Query",
+          "query" : {
+              ## Provide a query expression. **
+              "expression": "customerContactId = :customerContactId",
+              "expressionValues" : {
+                  ":customerContactId" : $util.dynamodb.toDynamoDBJson($ctx.source.id)
+              }
+          },
+          "index": "byCustomerContactId",
+          "select": "ALL_ATTRIBUTES"
+        }
+        #end
+      ResponseMappingTemplate: |
+        #if( $ctx.error )
+        $util.error($ctx.error.message, $ctx.error.type)
+        #else
+        $util.toJson($ctx.result)
+        #end
+
+  ########################
+  # Get Customer Profile  #
+  ########################
+  GetCustomerProfile:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: CustomerProfileTable
+      FieldName: customerProfile
+      TypeName: CustomerContact
+      RequestMappingTemplate: !Sub |
+        #if( $util.isNull($ctx.source.userId) )
+          #return
+        #else
+        {
+          "version": "2017-02-28",
+          "operation": "GetItem",
+          "key": {
+              "userId": $util.dynamodb.toDynamoDBJson($ctx.source.userId),
+          }
+        }
+        #end
+      ResponseMappingTemplate: |
+        #if( $ctx.error )
+        $util.error($ctx.error.message, $ctx.error.type)
+        #else
+        $util.toJson($ctx.result)
+        #end
+
+  ########################
+  # Customer Contacts by Profile ID  #
+  ########################
+  GetCustomerContactsByCustomerProfileId:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: CustomerContactTable
+      FieldName: CustomerContactsByCustomerProfileId
+      TypeName: Query
+      RequestMappingTemplate: |
+        #set( $limit = $util.defaultIfNull($context.args.limit, 100) )
+        #set( $modelQueryExpression = {} )
+        #set( $modelQueryExpression.expression = "#userId = :userId" )
+        #set( $modelQueryExpression.expressionNames = {
+        "#userId": "userId"
+        } )
+        #set( $modelQueryExpression.expressionValues = {
+        ":userId": $util.parseJson("$util.dynamodb.toDynamoDBJson($ctx.args.userId)") } )      
+        #set( $ListRequest = {
+          "version": "2018-05-29",
+          "limit": $limit,
+          "index": "byCustomerProfileId",
+          "select": "ALL_ATTRIBUTES"
+        } )
+        #if( $context.args.nextToken )
+          #set( $ListRequest.nextToken = $context.args.nextToken )
+        #end
+        #if( $context.args.filter )
+          #set( $ListRequest.filter = $util.parseJson("$util.transform.toDynamoDBFilterExpression($ctx.args.filter)"))
+        #end
+        $util.qr($ListRequest.put("operation", "Query"))
+        $util.qr($ListRequest.put("query", $modelQueryExpression))
+        #if( !$util.isNull($ctx.args.sortDirection) && $ctx.args.sortDirection == "DESC" )
+          #set( $ListRequest.scanIndexForward = false )
+        #else
+          #set( $ListRequest.scanIndexForward = true )
+        #end
+        $util.toJson($ListRequest)
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.result)

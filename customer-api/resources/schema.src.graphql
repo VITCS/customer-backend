@@ -1,0 +1,53 @@
+type CustomerProfile
+  @model
+  @aws_api_key
+  @aws_cognito_user_pools
+  @key(name: "byUserId", fields: ["userId"], queryField: "customerUserByUserId")
+  @key(name: "byEmail", fields: ["email"], queryField: "customerUserByEmail")
+  @key(
+    name: "byPhoneNumber"
+    fields: ["phoneNumber"]
+    queryField: "customerUserByPhoneNumber"
+  ) {
+  id: ID
+  userId: ID!
+  firstName: String!
+  middleName: String
+  lastName: String!
+  deliveryToId: ID
+  email: AWSEmail!
+  profileImage: String
+  phoneNumber: String
+  occasionReminderProfile: Boolean
+  DeviceToken: [DeviceToken]
+    @connection(keyName: "byDeviceToken", fields: ["id"])
+}
+
+type DeviceToken
+  @model
+  @aws_api_key
+  @aws_cognito_user_pools
+  @key(
+    name: "byDeviceToken"
+    fields: ["deviceToken"]
+    queryField: "byDeviceToken"
+  )
+  @key(name: "byUserId", fields: ["userId"], queryField: "byUserId") {
+  deviceToken: ID
+  userId: ID
+  userType: UserType
+  userPool: UserPool
+  user: CustomerProfile @connection(fields: ["userId"])
+}
+
+enum UserType {
+  Anonymous
+  SignedIn
+}
+
+enum UserPool {
+  Merchant
+  Customer
+  Operations
+  Delivery
+}

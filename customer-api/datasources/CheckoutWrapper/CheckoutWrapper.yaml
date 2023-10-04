@@ -1,0 +1,68 @@
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 1
+    Description: CloudWatch Logs retention period for Lambda functions
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+  QueryLimit:
+    Type: Number
+    Default: 20
+    Description: Maximum number of items to return from a single query
+  ApiId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: API Id
+  GetCartFunctionId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Get Cart Function Id
+  SearchStoreFunctionId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Search Store Function Id
+  CreatePaymentIntentFunctionId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Create Payment Intent Function Id
+  CalculateTaxFunctionId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Calculate Tax Function Id
+  GetCustomerProfileFunctionId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Get Customer Profile Function Id
+  PaymentMethodsListFunction:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Payment Methods List Function Id
+
+##############################################################
+# Checkout Wrapper Resolver
+##############################################################
+Resources:
+  CheckoutWrapperResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      FieldName: checkoutWrapper
+      TypeName: Mutation
+      Kind: PIPELINE
+      PipelineConfig:
+        Functions:
+          - !Ref GetCartFunctionId
+          - !Ref SearchStoreFunctionId
+          - !Ref CreatePaymentIntentFunctionId
+          - !Ref CalculateTaxFunctionId
+          - !Ref GetCustomerProfileFunctionId
+          - !Ref PaymentMethodsListFunction
+      RequestMappingTemplate: {}

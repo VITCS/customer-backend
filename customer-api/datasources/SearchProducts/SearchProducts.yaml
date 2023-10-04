@@ -1,0 +1,88 @@
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 1
+    Description: CloudWatch Logs retention period for Lambda functions
+  EventBusName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: EventBridge Event Bus Name
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+  QueryLimit:
+    Type: Number
+    Default: 20
+    Description: Maximum number of items to return from a single query
+  ApiId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: API Id
+##############################################################
+# Data Sources for Search Products
+##############################################################
+Resources:
+  ##########################
+  # Roles #
+  ##########################
+  ManageSearchProductsFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ManageSearchProductsFunctionRole
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Application}-${Environment}-ManageSearchProducts-Function
+
+  ##########################
+  # Manage Search Products #
+  ##########################
+  ManageSearchProductsDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !Ref ApiId
+      Name: ManageSearchProducts
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt ManageSearchProductsFunctionRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Application}-${Environment}-ManageSearchProducts-Function
+
+  SearchProductsResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt ManageSearchProductsDataSource.Name
+      FieldName: searchProductsLambda
+      TypeName: Query
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": {
+            "body": $util.toJson($ctx.arguments)
+          }
+        }
+      ResponseMappingTemplate: |
+        $utils.toJson($ctx.result)

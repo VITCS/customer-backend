@@ -1,0 +1,616 @@
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 1
+    Description: CloudWatch Logs retention period for Lambda functions
+  EventBusName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: EventBridge Event Bus Name
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+  QueryLimit:
+    Type: Number
+    Default: 20
+    Description: Maximum number of items to return from a single query
+  ApiId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: API Id
+  SearchItem:
+    Type: String
+    Description: Search Item i.e. Table to search
+    Default: ${Appplication}-${Environment}-Order
+##############################################################
+# Data Sources for Order
+##############################################################
+Resources:
+  ##########################
+  # Roles #
+  ##########################
+  ManageOrderFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ManageOrderFunctionRole
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Application}-${Environment}-ManageOrder-Function
+
+  ##########################
+  # Manage Order #
+  ##########################
+  ManageOrderDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !Ref ApiId
+      Name: ManageOrder
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt ManageOrderFunctionRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Application}-${Environment}-ManageOrder-Function
+
+  NoneDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !Ref ApiId
+      Name: NoneDataSource
+      Type: NONE
+
+  CreateOrderResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt ManageOrderDataSource.Name
+      FieldName: createOrder
+      TypeName: Mutation
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": {
+            "field": "createOrder",
+            "body": $util.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: |
+        $utils.toJson($ctx.result)
+
+  UpdateOrderResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt ManageOrderDataSource.Name
+      FieldName: updateOrder
+      TypeName: Mutation
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": {
+            "field": "updateOrder",
+            "body": $util.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: |
+        $utils.toJson($ctx.result)
+
+  DeleteOrderResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt ManageOrderDataSource.Name
+      FieldName: deleteOrder
+      TypeName: Mutation
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": {
+            "field": "deleteOrder",
+            "body": $util.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: |
+        $utils.toJson($ctx.result)
+
+  AddOrderResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt NoneDataSource.Name
+      FieldName: addOrder
+      TypeName: Mutation
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "payload": $util.toJson($context.arguments)
+        }
+      ResponseMappingTemplate: |
+        $utils.toJson($ctx.result.input)
+
+  OrderRejectionResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt NoneDataSource.Name
+      FieldName: rejectionNotificationUpdate
+      TypeName: Mutation
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "payload": $util.toJson($context.arguments)
+        }
+      ResponseMappingTemplate: |
+        $utils.toJson($ctx.result.input)
+
+  UpdateOrderShipmentNotification:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt NoneDataSource.Name
+      FieldName: updateOrderShipmentNotification
+      TypeName: Mutation
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "payload": $util.toJson($context.arguments)
+        }
+      ResponseMappingTemplate: |
+        $utils.toJson($ctx.result.input)
+
+  CalculateTaxResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt ManageOrderDataSource.Name
+      FieldName: calculateTax
+      TypeName: Mutation
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": {
+            "field": "calculateTax",
+            "body": $util.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: |
+        $utils.toJson($ctx.result)
+
+  CreatePaymentIntentResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt ManageOrderDataSource.Name
+      FieldName: createPaymentIntent
+      TypeName: Mutation
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": {
+            "field": "createPaymentIntent",
+            "body": $util.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: |
+        $utils.toJson($ctx.result)
+
+  PaymentMethodsListResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt ManageOrderDataSource.Name
+      FieldName: paymentMethodsList
+      TypeName: Mutation
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": {
+            "field": "paymentMethodsList",
+            "body": $util.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: |
+        $utils.toJson($ctx.result)
+
+  DeletePaymentMethodResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt ManageOrderDataSource.Name
+      FieldName: deletePaymentMethod
+      TypeName: Mutation
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": {
+            "field": "deletePaymentMethod",
+            "body": $util.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: |
+        $utils.toJson($ctx.result)
+
+  DefaultPaymentMethodResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt ManageOrderDataSource.Name
+      FieldName: defaultPaymentMethod
+      TypeName: Mutation
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": {
+            "field": "defaultPaymentMethod",
+            "body": $util.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: |
+        $utils.toJson($ctx.result)
+
+  CalculateTaxFunction:
+    Type: AWS::AppSync::FunctionConfiguration
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt ManageOrderDataSource.Name
+      FunctionVersion: "2018-05-29"
+      Name: CalculateTaxFunction
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": {
+            "field": "calculateTax",
+            "body": $util.toJson($context.arguments.taxInput)
+          }
+        }
+      ResponseMappingTemplate: |
+        #set( $taxCalculation = $ctx.result )
+        $util.toJson({ "taxCalculation": $taxCalculation, "cart": $ctx.prev.result.cart, "stores": $ctx.prev.result.stores, "paymentIntent": $ctx.prev.result.paymentIntent })
+
+  CalculateTaxPipelineFunctionIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${Application}/${Environment}/${Module}/calculateTaxFunction/id
+      Type: String
+      Value: !GetAtt CalculateTaxFunction.FunctionId
+
+  CreatePaymentIntentFunction:
+    Type: AWS::AppSync::FunctionConfiguration
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt ManageOrderDataSource.Name
+      FunctionVersion: "2018-05-29"
+      Name: CreatePaymentIntentFunction
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+          "field": "createPaymentIntent",
+          "body": $util.toJson($context.args.createPaymentIntentInput)
+          }
+        }
+      ResponseMappingTemplate: |
+        #set( $paymentIntent = $ctx.result )
+        $util.toJson({"paymentIntent": $paymentIntent, "cart": $ctx.prev.result.cart, "stores": $ctx.prev.result.stores })
+
+  CreatePaymentIntentPipelineFunctionIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${Application}/${Environment}/${Module}/createPaymentIntent/id
+      Type: String
+      Value: !GetAtt CreatePaymentIntentFunction.FunctionId
+
+  PaymentMethodsListFunction:
+    Type: AWS::AppSync::FunctionConfiguration
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt ManageOrderDataSource.Name
+      FunctionVersion: "2018-05-29"
+      Name: PaymentMethodsListFunction
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+          "field": "paymentMethodsList",
+          "body": $util.toJson($context.args.paymentMethodsListInput)
+          }
+        }
+      ResponseMappingTemplate: |
+        #set( $paymentMethodsList = $ctx.result )
+        $util.toJson({ "paymentMethodsList": $paymentMethodsList, "customerProfile": $ctx.prev.result.customerProfile, "taxCalculation": $ctx.prev.result.taxCalculation, "cart": $ctx.prev.result.cart, "stores": $ctx.prev.result.stores, "paymentIntent": $ctx.prev.result.paymentIntent })
+
+  PaymentMethodsListPipelineFunctionIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${Application}/${Environment}/${Module}/paymentMethodsList/id
+      Type: String
+      Value: !GetAtt PaymentMethodsListFunction.FunctionId
+
+  SaveCustomerCardResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt ManageOrderDataSource.Name
+      FieldName: saveCustomerCard
+      TypeName: Mutation
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": {
+            "field": "saveCustomerCard",
+            "body": $util.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: |
+        $utils.toJson($ctx.result)
+
+  ########################
+  # Get Order  #
+  ########################
+  GetOrderRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: GetOrderTableAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:GetItem
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-Order"
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-Order/index/category"
+                  - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-Order/index/byEmail"
+                  - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-Order/index/byPhoneNumber"
+                  - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-Order/index/orderByUserId"
+                  - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-Order/index/byUserIdCreatedAt"
+
+  GetOrderShipmentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: GetOrderShipmentTableAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:GetItem
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-OrderShipment"
+                  - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-OrderShipment/index/byAssignedStoreId"
+                  - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-OrderShipment/index/byAssignedStoreIdCreatedAt"
+                  - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-OrderShipment/index/byOrderId"
+
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-Order/index/category"
+                  - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-Order/index/byEmail"
+                  - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Application}-${Environment}-Order/index/byPhoneNumber"
+
+  OrderTableDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !Ref ApiId
+      Name: OrderTable
+      Type: AMAZON_DYNAMODB
+      ServiceRoleArn: !GetAtt GetOrderRole.Arn
+      DynamoDBConfig:
+        AwsRegion: !Ref AWS::Region
+        TableName: !Sub ${Application}-${Environment}-Order
+
+  OrderShipmentTableDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !Ref ApiId
+      Name: OrderShipmentTable
+      Type: AMAZON_DYNAMODB
+      ServiceRoleArn: !GetAtt GetOrderShipmentRole.Arn
+      DynamoDBConfig:
+        AwsRegion: !Ref AWS::Region
+        TableName: !Sub ${Application}-${Environment}-OrderShipment
+
+  listOrderResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt OrderTableDataSource.Name
+      FieldName: listOrders
+      TypeName: Query
+      RequestMappingTemplate: |
+        #set( $limit = $util.defaultIfNull($context.args.limit, 100) )
+        #set( $ListRequest = {
+          "version": "2018-05-29",
+          "limit": $limit
+        } )
+        #if( $context.args.nextToken )
+          #set( $ListRequest.nextToken = $context.args.nextToken )
+        #end
+        #if( $context.args.filter )
+          #set( $ListRequest.filter = $util.parseJson("$util.transform.toDynamoDBFilterExpression($ctx.args.filter)") )
+        #end
+        #if( !$util.isNull($modelQueryExpression)
+                                && !$util.isNullOrEmpty($modelQueryExpression.expression) )
+          $util.qr($ListRequest.put("operation", "Query"))
+          $util.qr($ListRequest.put("query", $modelQueryExpression))
+          #if( !$util.isNull($ctx.args.sortDirection) && $ctx.args.sortDirection == "DESC" )
+            #set( $ListRequest.scanIndexForward = false )
+          #else
+            #set( $ListRequest.scanIndexForward = true )
+          #end
+        #else
+          $util.qr($ListRequest.put("operation", "Scan"))
+        #end
+        $util.toJson($ListRequest)
+      ResponseMappingTemplate: |
+        #if( $ctx.error )
+        $util.error($ctx.error.message, $ctx.error.type)
+        #else
+        $util.toJson($ctx.result)
+        #end
+
+  GetOrderResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt OrderTableDataSource.Name
+      FieldName: getOrder
+      TypeName: Query
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "GetItem",
+          "key": #if( $modelObjectKey ) $util.toJson($modelObjectKey) #else {
+          "id": $util.dynamodb.toDynamoDBJson($ctx.args.id)
+        } #end
+        }
+      ResponseMappingTemplate: |
+        #if( $ctx.error )
+        $util.error($ctx.error.message, $ctx.error.type)
+        #else
+        $util.toJson($ctx.result)
+        #end
+
+  GetOrderByUserIdResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt OrderTableDataSource.Name
+      FieldName: getOrderByUserId
+      TypeName: Query
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation" : "Query",
+          "query" : {
+              "expression": "userId = :userId",
+              "expressionValues" : {
+                  ":userId" : $util.dynamodb.toDynamoDBJson($ctx.args.userId)
+              }
+          },
+          "index": "orderByUserId",
+          #if($context.args.filter) "filter": $util.transform.toDynamoDBFilterExpression($ctx.args.filter), #end
+          #if($context.args.nextToken) "nextToken": "$context.args.nextToken", #end
+          "limit": $util.defaultIfNull($context.args.limit, 100),
+          "select": "ALL_ATTRIBUTES"
+        }
+      ResponseMappingTemplate: |
+        #if( $ctx.error )
+        $util.error($ctx.error.message, $ctx.error.type)
+        #else
+        $util.toJson($ctx.result)
+        #end
+
+  ListOrdersByUserIdResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt OrderTableDataSource.Name
+      FieldName: listOrdersByUserId
+      TypeName: Query
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation" : "Query",
+          "query" : {
+              ## Provide a query expression. **
+              "expression": "userId = :userId",
+              "expressionValues" : {
+                  ":userId" : $util.dynamodb.toDynamoDBJson($ctx.args.userId)
+              }
+          },
+          "index": "byUserIdCreatedAt",
+          "scanIndexForward": false,
+          #if($context.args.filter) "filter": $util.transform.toDynamoDBFilterExpression($ctx.args.filter), #end
+          #if($context.args.nextToken) "nextToken": "$context.args.nextToken", #end
+          "limit": $util.defaultIfNull($context.args.limit, 20),
+          "select": "ALL_ATTRIBUTES"
+        }
+      ResponseMappingTemplate: |
+        #if( $ctx.error )
+        $util.error($ctx.error.message, $ctx.error.type)
+        #else
+        $util.toJson($ctx.result)
+        #end
+
+  GetOrderShipment:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt OrderShipmentTableDataSource.Name
+      FieldName: orderShipment
+      TypeName: Order
+      RequestMappingTemplate: |
+        {
+            "version" : "2017-02-28",
+            "operation" : "Query",
+            "query" : {
+                ## Provide a query expression. **
+                "expression": "orderId = :orderId",
+                "expressionValues" : {
+                    ":orderId" : $util.dynamodb.toDynamoDBJson($ctx.source.id)
+                }
+            },
+            "index": "byOrderId",
+            "select": "ALL_ATTRIBUTES"
+        }
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.result)

@@ -1,0 +1,68 @@
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 1
+    Description: CloudWatch Logs retention period for Lambda functions
+  EventBusName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: EventBridge Event Bus Name
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+  QueryLimit:
+    Type: Number
+    Default: 20
+    Description: Maximum number of items to return from a single query
+  ApiId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: API Id
+  SearchItem:
+    Type: String
+    Description: Search Item i.e. Table to search
+    Default: ${Application}-${Environment}-CustomerPaymentSetup
+##############################################################
+# Data Sources for Merchant User Store
+##############################################################
+Resources:
+  ########################
+  # Get Customer Profile #
+  ########################
+  GetCustomerProfile:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: CustomerProfileTable
+      FieldName: customerProfile
+      TypeName: CustomerPayment
+      RequestMappingTemplate: |
+        #if( $util.isNull($ctx.source.userId) )
+          #return
+        #else
+        {
+          "version": "2017-02-28",
+          "operation": "GetItem",
+          "key": {
+              "userId": $util.dynamodb.toDynamoDBJson($ctx.source.userId),
+          }
+        }
+        #end
+      ResponseMappingTemplate: |
+        #if( $ctx.error )
+        $util.error($ctx.error.message, $ctx.error.type)
+        #else
+        $util.toJson($ctx.result)
+        #end

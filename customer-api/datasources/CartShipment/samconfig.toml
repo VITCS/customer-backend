@@ -1,0 +1,57 @@
+version = 0.1
+
+[dev]
+[dev.deploy]
+[dev.deploy.parameters]
+stack_name = "spirits-dev-cartshipment-datasource"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-dev-cartshipment-datasource"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customer\" Environment=\"dev\" LogLevel=\"INFO\" RetentionInDays=\"30\" EventBusName=\"/spirits/dev/platform/eventbus/arn\" NodeLayerArn=\"/spirits/dev/shared/nodelayer/arn\" QueryLimit=\"20\" ApiId=\"/spirits/dev/customer/customerapi/id\" ElasticSearchDomainEndpoint=\"/spirits/dev/elasticsearch/domain/endpoint\""
+
+[devdep]
+[devdep.deploy]
+[devdep.deploy.parameters]
+stack_name = "spirits-dev-cartshipment-dep-datasource"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-dev-cartshipment-dep-datasource"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customer\" Environment=\"dev\" LogLevel=\"INFO\" RetentionInDays=\"30\" EventBusName=\"/spirits/dev/platform/eventbus/arn\" NodeLayerArn=\"/spirits/dev/shared/nodelayer/arn\" QueryLimit=\"20\" ApiId=\"/spirits/dev/customer/customerapi/id\" ElasticSearchDomainEndpoint=\"/spirits/dev/elasticsearch/domain/endpoint\""
+
+[dev2]
+[dev2.deploy]
+[dev2.deploy.parameters]
+stack_name = "spirits-dev2-cartshipment-datasource"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-dev2-cartshipment-datasource"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customer\" Environment=\"dev2\" LogLevel=\"INFO\" RetentionInDays=\"30\" EventBusName=\"/spirits/dev2/platform/eventbus/arn\" NodeLayerArn=\"/spirits/dev2/shared/nodelayer/arn\" QueryLimit=\"20\" ApiId=\"/spirits/dev2/customer/customerapi/id\" ElasticSearchDomainEndpoint=\"/spirits/dev/elasticsearch/domain/endpoint\""
+
+[sit]
+[sit.deploy]
+[sit.deploy.parameters]
+stack_name = "spirits-sit-cartshipment-datasource"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-sit-cartshipment-datasource"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customer\" Environment=\"sit\" LogLevel=\"INFO\" RetentionInDays=\"30\" EventBusName=\"/spirits/sit/platform/eventbus/arn\" NodeLayerArn=\"/spirits/sit/shared/nodelayer/arn\" QueryLimit=\"20\" ApiId=\"/spirits/sit/customer/customerapi/id\" ElasticSearchDomainEndpoint=\"/spirits/dev/elasticsearch/domain/endpoint\""
+
+
+[prd]
+[prd.deploy]
+[prd.deploy.parameters]
+stack_name = "spirits-prd-cartshipment-datasource"
+s3_bucket = "409907184267-spirits-prd-samdeploy"
+s3_prefix = "spirits-prd-cartshipment-datasource"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customer\" Environment=\"prd\" LogLevel=\"INFO\" RetentionInDays=\"30\" EventBusName=\"/spirits/prd/platform/eventbus/arn\" NodeLayerArn=\"/spirits/prd/shared/nodelayer/arn\" QueryLimit=\"20\" ApiId=\"/spirits/prd/customer/customerapi/id\" ElasticSearchDomainEndpoint=\"/spirits/dev/elasticsearch/domain/endpoint\""

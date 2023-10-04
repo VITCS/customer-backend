@@ -1,0 +1,478 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: sit
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 30
+    Description: CloudWatch Logs retention period for Lambda functions
+  ElasticSearchDomainEndpoint:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: ES Domain Endpoint
+  ApiId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Api Id
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+
+Globals:
+  Function:
+    Runtime: nodejs16.x
+    Handler: index.handler
+    Layers:
+      - !Ref NodeLayerArn
+    Timeout: 30
+    Tracing: Active
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        LOG_LEVEL: !Ref LogLevel
+
+################################################
+# Resources
+################################################
+Resources:
+  ########################
+  # Search Product  #
+  ########################
+  SearchProductFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SearchProductFunctionAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: es:*
+                Resource: !Sub arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${Application}-${Environment}-es/*
+
+  SearchProductDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !Ref ApiId
+      Name: SearchProduct
+      Type: AMAZON_ELASTICSEARCH
+      ServiceRoleArn: !GetAtt SearchProductFunctionRole.Arn
+      ElasticsearchConfig:
+        AwsRegion: !Sub ${AWS::Region}
+        Endpoint: !Sub ${ElasticSearchDomainEndpoint}
+
+  SearchProductsResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt SearchProductDataSource.Name
+      FieldName: searchProducts
+      TypeName: Query
+      RequestMappingTemplate: !Sub |
+        #set( $indexPath = "/${Application}-${Environment}-product/_search" )
+        #set( $nonKeywordFields = [] )
+        #if( $util.isNullOrEmpty($context.args.sort) )
+          #set( $sortDirection = "desc" )
+          #set( $sortField = "id" )
+        #else
+          #set( $sortDirection = $util.defaultIfNull($context.args.sort.direction, "desc") )
+          #set( $sortField = $util.defaultIfNull($context.args.sort.field, "id") )
+        #end
+        #if( $nonKeywordFields.contains($sortField) )
+          #set( $sortField0 = $util.toJson($sortField) )
+        #else
+          #set( $sortField0 = $util.toJson(sortField.keyword) )
+        #end
+        {
+          "version": "2018-05-29",
+          "operation": "GET",
+          "path": "$indexPath",
+          "params": {
+              "body":     {
+                        #if( $context.args.nextToken )"search_after": [$util.toJson($context.args.nextToken)], #end
+                        #if( $context.args.from )"from": $context.args.from, #end
+                        "size": #if( $context.args.limit ) $context.args.limit #else 100 #end,
+                        "sort": [{$sortField0: { "order" : $util.toJson($sortDirection) }}],
+                        "version": false,
+                        "query": #if( $context.args.filter )
+        $util.transform.toElasticsearchQueryDSL($ctx.args.filter)
+        ,
+        #else
+        {
+              "match_all": {}
+          }
+        ,
+        #end
+        "aggregations": {
+            "Country": {
+              "terms": {
+              "field": "country.keyword"
+              }
+            },
+            "Type": {
+              "terms": {
+              "field": "prodMajor.keyword"
+              }
+            },
+            "Container": {
+              "terms": {
+              "field": "container.keyword"
+              }
+            },
+            "Brand": {
+              "terms": {
+              "field": "brandLine.keyword"
+              }
+            },
+            "ProdCategory": {
+              "terms": {
+              "field": "prodCategory.keyword"
+              }
+            },
+            "ProdMajor": {
+              "terms": {
+              "field": "prodMajor.keyword"
+              }
+            },
+            "ProdMinor": {
+              "terms": {
+              "field": "prodMinor.keyword"
+              }
+            }
+            
+          }
+                        }
+          }
+        }
+
+      ResponseMappingTemplate: |
+        #set( $es_items = [] )
+        #foreach( $entry in $context.result.hits.hits )
+          #if( !$foreach.hasNext )
+            #set( $nextToken = $entry.sort.get(0) )
+          #end
+          $util.qr($es_items.add($entry.get("_source")))
+        #end
+        $util.toJson({
+          "items": $es_items,
+          "brand": $ctx.result.aggregations.Brand.buckets,
+          "majorType": $ctx.result.aggregations.Type.buckets,
+          "country": $ctx.result.aggregations.Country.buckets,
+          "container": $ctx.result.aggregations.Container.buckets,
+          "ProdCategory": $ctx.result.aggregations.ProdCategory.buckets,
+          "ProdMajor" : $ctx.result.aggregations.ProdMajor.buckets,
+          "ProdMinor" : $ctx.result.aggregations.ProdMinor.buckets,	
+          "total": $ctx.result.hits.total.value,
+          "nextToken": $nextToken
+        })
+
+  ########################
+  # Search Store  #
+  ########################
+  SearchStoreFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SearchStoreFunctionAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: es:*
+                Resource: !Sub arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${Application}-${Environment}-es/*
+
+  SearchStoreDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !Ref ApiId
+      Name: SearchStore
+      Type: AMAZON_ELASTICSEARCH
+      ServiceRoleArn: !GetAtt SearchStoreFunctionRole.Arn
+      ElasticsearchConfig:
+        AwsRegion: !Sub ${AWS::Region}
+        Endpoint: !Sub ${ElasticSearchDomainEndpoint}
+
+  SearchStoresResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt SearchStoreDataSource.Name
+      FieldName: searchStores
+      TypeName: Query
+      RequestMappingTemplate: !Sub |
+        #set( $dist = $context.args.distance )
+        #set( $unit = "mi" )
+        {
+          "version":"2017-02-28",
+          "operation":"GET",
+          "path":"/${Application}-${Environment}-store/_search",
+          "params":{
+              "body": {
+                    "sort" : [
+                      {
+                        "_geo_distance" : {
+                            "address.geoPoint" : [$ctx.args.lon, $ctx.args.lat],
+                            "order" : "asc",
+                            "unit" : "$unit",
+                            "mode" : "min",
+                            "distance_type" : "arc",
+                            "ignore_unmapped": true
+                        }
+                      }
+                    ],              
+                  "query": {
+                    "bool": {
+                      "must": [
+                          #if ($ctx.args.filter)
+                                $util.transform.toElasticsearchQueryDSL($ctx.args.filter)
+                            #else
+                              {
+                                  "match_all": {}
+                                }
+                            #end
+                        ],
+                        "filter": [
+                          {
+                            "geo_distance": {
+                              "distance": "$dist$unit",
+                              "address.geoPoint": {
+                                "lat": $ctx.args.lat,
+                                "lon": $ctx.args.lon
+                              }
+                            }
+                          }
+                        ]
+                    }
+                  }
+              }
+          }
+        }
+
+      ResponseMappingTemplate: |
+        #set( $es_items = [] )
+        #foreach( $entry in $context.result.hits.hits )
+          #if( !$foreach.hasNext )
+            #set( $nextToken = $entry.sort.get(0) )
+          #end
+          $util.qr($es_items.add($entry.get("_source")))
+        #end
+        $util.toJson({
+          "items": $es_items,
+          "total": $ctx.result.hits.total.value,
+          "nextToken": $nextToken
+        })
+
+  SearchStoreFunction:
+    Type: AWS::AppSync::FunctionConfiguration
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt SearchStoreDataSource.Name
+      FunctionVersion: "2018-05-29"
+      Name: SearchStoreFunction
+      RequestMappingTemplate: |
+        #set( $dist = $context.args.distance )
+        #set( $unit = "mi" )
+        {
+          "version":"2017-02-28",
+          "operation":"GET",
+          "path":"/${Application}-${Environment}-store/_search",
+          "params":{
+              "body": {
+                  "query": {
+                    "bool": {
+                      "must": [
+                          #if ($ctx.args.filter)
+                                $util.transform.toElasticsearchQueryDSL($ctx.args.filter)
+                            #else
+                              {
+                                  "match_all": {}
+                                }
+                            #end
+                        ],
+                        "filter": [
+                          {
+                            "geo_distance": {
+                              "distance": "$dist$unit",
+                              "address.geoPoint": {
+                                "lat": $ctx.args.lat,
+                                "lon": $ctx.args.lon
+                              }
+                            }
+                          }
+                        ]
+                    }
+                  }
+              }
+          }
+        }
+      ResponseMappingTemplate: |
+        #set( $es_items = [] )
+        #foreach( $entry in $context.result.hits.hits )
+          #if( !$foreach.hasNext )
+            #set( $nextToken = $entry.sort.get(0) )
+          #end
+          $util.qr($es_items.add($entry.get("_source")))
+        #end
+        #set( $cart = $ctx.prev.result )
+        #set( $stores =  {"items": $es_items, "total": $ctx.result.hits.total.value, "nextToken": $nextToken })
+        $util.toJson({
+          "cart": $cart,
+          "stores": $stores
+        })
+
+  SearchStorePipelineFunctionIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${Application}/${Environment}/${Module}/searchStoreFunction/id
+      Type: String
+      Value: !GetAtt SearchStoreFunction.FunctionId
+
+  ########################
+  # Search Price And Availability  #
+  ########################
+  SearchPriceAndAvailabilityFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SearchStoreFunctionAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: es:*
+                Resource: !Sub arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${Application}-${Environment}-es/*
+
+  SearchPriceAndAvailabilityDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !Ref ApiId
+      Name: SearchPriceAndAvailability
+      Type: AMAZON_ELASTICSEARCH
+      ServiceRoleArn: !GetAtt SearchPriceAndAvailabilityFunctionRole.Arn
+      ElasticsearchConfig:
+        AwsRegion: !Sub ${AWS::Region}
+        Endpoint: !Sub ${ElasticSearchDomainEndpoint}
+
+  SearchPriceAndAvailabilitysResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt SearchPriceAndAvailabilityDataSource.Name
+      FieldName: searchPriceAndAvailabilitys
+      TypeName: Query
+      RequestMappingTemplate: !Sub |
+        #if( $context.args.distance && $context.args.lat && $context.args.lon )
+        #set( $dist = $context.args.distance )
+          #set( $unit = "mi" )
+          {
+            "version":"2017-02-28",
+            "operation":"GET",
+            "path":"/${Application}-${Environment}-priceandavailability/_search",
+            "params":{
+                "body": {
+                    "size": $util.defaultIfNull($context.args.limit, 20),
+                    "sort" : [
+                      {
+                        "_geo_distance" : {
+                            "storeCoord" : [$ctx.args.lon, $ctx.args.lat],
+                            "order" : "asc",
+                            "unit" : "$unit",
+                            "mode" : "min",
+                            "distance_type" : "arc",
+                            "ignore_unmapped": true
+                        }
+                      }
+                    ],
+                    "query": {
+                      "bool": {
+                          "must": [
+                              #if ($ctx.args.filter)
+                                  $util.transform.toElasticsearchQueryDSL($ctx.args.filter)
+                              #else
+                                  {
+                                      "match_all": {}
+                                  }
+                              #end
+                          ],
+                          "filter": [
+                            {
+                              "geo_distance": {
+                                "distance": "$dist$unit",
+                                "storeCoord": {
+                                  "lat": $ctx.args.lat,
+                                  "lon": $ctx.args.lon
+                                }
+                              }
+                            }
+                          ]
+                      }
+                    }
+                }
+            }
+          }
+        #else
+        {
+          "version":"2017-02-28",
+          "operation":"GET",
+          "path":"/${Application}-${Environment}-priceandavailability/_search",
+          "params":{
+              "body": {
+                  "size": $util.defaultIfNull($context.args.limit, 20),
+                  "query": #if ($ctx.args.filter)
+                  $util.transform.toElasticsearchQueryDSL($ctx.args.filter)
+                  #else 
+                  {
+                    "match_all": {}
+                  }
+                  #end
+              }
+          }
+        }
+        #end
+
+      ResponseMappingTemplate: |
+        #set( $es_items = [] )
+        #foreach( $entry in $context.result.hits.hits )
+          #if( !$foreach.hasNext )
+            #set( $nextToken = $entry.sort.get(0) )
+          #end
+          $util.qr($es_items.add($entry.get("_source")))
+        #end
+        $util.toJson({
+          "items": $es_items,
+          "total": $ctx.result.hits.total.value,
+          "nextToken": $nextToken
+        })

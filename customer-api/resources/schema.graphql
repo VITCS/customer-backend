@@ -1,0 +1,2459 @@
+type Address @aws_api_key @aws_cognito_user_pools {
+  addrLine1: String!
+  addrLine2: String
+  city: String!
+  state: String
+  country: String!
+  postCode: String
+  latitude: Float
+  longitude: Float
+}
+
+enum AddressType {
+  Home
+  Work
+  Custom
+}
+
+type AggRes @aws_api_key @aws_cognito_user_pools {
+  key: String
+  doc_count: Int
+}
+
+type CarouselData @aws_api_key @aws_cognito_user_pools {
+  name: String
+  imageUrl: String
+  tags: [Tags]
+}
+
+type Cart @aws_api_key @aws_cognito_user_pools {
+  # id: ID
+  ############################################################################################################################# storeId: String!
+  ############################################################################################################################# storeName: ID
+  ############################################################################################################################# deliveryMode: String
+  ############################################################################################################################# cartItem: [CartItem]
+  ############################################################################################################################# deliveryAddress: DeliveryAddress
+  ############################################################################################################################# userId: ID
+  ############################################################################################################################# customerProfile: CustomerProfile
+  ############################################################################################################################# createdAt: AWSDateTime!
+  ############################################################################################################################# updatedAt: AWSDateTime!
+  id: ID
+  userId: ID
+  anonymousId: ID
+  belongsTo: String
+  totalAmount: Float
+  totalDeliveryCharges: Float
+  totalDiscount: Float
+  totalProductAmount: Float
+  totalTaxAmount: Float
+  totalTipAmount: Float
+  orderStatus: OrderStatus
+  createdAt: AWSDateTime!
+  closedAt: AWSDateTime!
+  channel: String
+  userAgent: String
+  cartShipment: ModelCartShipmentConnection
+  transactionId: String
+  updatedAt: AWSDateTime!
+}
+
+type CartShipment @aws_api_key @aws_cognito_user_pools {
+  id: ID
+  assignedStoreId: ID
+  cartId: ID
+  deliveryType: String
+  assignedStoreName: String
+  deliveryAddress: DeliveryAddress
+  shipmentStatus: ShipmentStatus
+  lineItems: [LineItem]
+  statusHistory: ShipmentStHistory
+  updatedAt: AWSDateTime!
+  updatedBy: String
+  subTotalAmount: Float
+  subTotalDeliveryCharges: Float
+  subTotalDiscount: Float
+  subTotalProductAmount: Float
+  subTotalTax: Float
+  subTotalTipAmount: Float
+  createdAt: AWSDateTime!
+  userId: ID
+  actionType: String
+  deliveryTip: Float
+  serviceCharge: Float
+}
+
+input CartShipmentInput {
+  id: ID
+  assignedStoreId: ID
+  deliveryType: String
+  assignedStoreName: String
+  deliveryAddress: DeliveryAddressInput
+  shipmentStatus: ShipmentStatus
+  lineItems: [LineItemInput]
+  statusHistory: ShipmentStHistoryInput
+  updatedAt: AWSDateTime
+  updatedBy: String
+  subTotalAmount: Float
+  subTotalDeliveryCharges: Float
+  subTotalDiscount: Float
+  subTotalProductAmount: Float
+  subTotalTax: Float
+  subTotalTipAmount: Float
+  createdAt: AWSDateTime
+  userId: ID
+  actionType: String
+  cartId: String
+}
+
+# type CartItem {
+############################################################################################################################# 	cartItemId: ID!
+############################################################################################################################# 	productId: String!
+############################################################################################################################# 	productName: String
+############################################################################################################################# 	quantity: Int
+############################################################################################################################# 	webPrice: Float
+############################################################################################################################# 	mrp: Float
+############################################################################################################################# }
+############################################################################################################################# input CartItemInput {
+############################################################################################################################# 	cartItemId: ID
+############################################################################################################################# 	productId: String!
+############################################################################################################################# 	productName: String!
+############################################################################################################################# 	quantity: Int!
+############################################################################################################################# 	webPrice: Float!
+############################################################################################################################# 	mrp: Float!
+############################################################################################################################# }
+enum ContactCategory {
+  Self
+  Family
+  Friends
+  Colleagues
+  Mentor
+  Customers
+  Employees
+  Partners
+  Custom
+}
+
+input CreateCartInput {
+  id: ID
+  userId: ID
+  anonymousId: ID
+  belongsTo: String
+  totalAmount: Float
+  totalDeliveryCharges: Float
+  totalDiscount: Float
+  totalProductAmount: Float
+  totalTaxAmount: Float
+  totalTipAmount: Float
+  orderStatus: OrderStatus
+  createdAt: AWSDateTime
+  closedAt: AWSDateTime
+  channel: String
+  userAgent: String
+  cartShipment: [CartShipmentInput]
+  transactionId: String
+  updatedAt: AWSDateTime
+}
+
+input CreateCartShipmentInput {
+  id: ID
+  assignedStoreId: ID
+  cartId: ID
+  deliveryType: String
+  assignedStoreName: String
+  deliveryAddress: DeliveryAddressInput
+  shipmentStatus: ShipmentStatus
+  lineItems: [LineItemInput]
+  statusHistory: ShipmentStHistoryInput
+  updatedAt: AWSDateTime
+  updatedBy: String
+  subTotalAmount: Float
+  subTotalDeliveryCharges: Float
+  subTotalDiscount: Float
+  subTotalProductAmount: Float
+  subTotalTax: Float
+  subTotalTipAmount: Float
+  createdAt: AWSDateTime
+  userId: ID
+}
+
+input CreateCustomerAddressInput {
+  id: ID
+  addressType: AddressType
+  phoneNumber: String
+  markDefault: Boolean
+  instructions: String
+  addrLine1: String!
+  addrLine2: String
+  customType: String
+  city: String!
+  country: String
+  addrState: String
+  postCode: String
+  latitude: Float
+  longitude: Float
+  firstName: String
+  middleName: String
+  lastName: String
+  customerContactId: ID
+}
+
+input CreateCustomerContactAddressOccasionInput {
+  CustomerContactInput: CreateCustomerContactInput
+  CustomerAddressInput: [CreateCustomerAddressInput]
+  CustomerOccasionInput: [CreateCustomerOccasionInput]
+}
+
+input CreateCustomerContactInput {
+  id: ID
+  firstName: String!
+  middleName: String
+  lastName: String!
+  email: String!
+  contactCustomType: String
+  phoneNumber: String!
+  contactCategory: ContactCategory
+  occasionReminderContact: Boolean
+  userId: ID
+  defaultAddressId: ID
+  addressType: String
+  deliveryAddress: DeliveryAddressInput
+}
+
+input CreateCustomerOccasionInput {
+  id: ID
+  customerContactId: ID
+  occasionDate: String
+  occasionTitle: String
+  reminder: Boolean
+}
+
+input CreateCustomerPaymentInput {
+  id: ID
+  bankName: String
+  cardHolderName: String
+  cardNumber: String
+  expDate: String
+  postalCode: String
+  cardDefault: Boolean
+  userId: ID
+}
+
+input CreateCustomerProfileInput {
+  id: ID
+  userId: ID!
+  firstName: String!
+  middleName: String
+  lastName: String!
+  deliveryToId: ID
+  deliverToAddress: CreateCustomerAddressInput
+  deliveryTo: Boolean
+  email: AWSEmail!
+  phoneNumber: String
+  profileImage: String
+  occasionReminderProfile: Boolean
+  subscribeToNotification: Boolean
+  orderLineitemReplacement: Boolean
+  customerRes: String
+  customerId: String
+}
+
+input CreateDeviceTokenInput {
+  deviceToken: ID
+  userId: ID
+  userType: UserType
+  userPool: UserPool
+}
+
+input CreateOrderInput {
+  id: ID
+  userId: ID
+  totalAmount: Float
+  totalDeliveryCharges: Float
+  totalDiscount: Float
+  totalProductAmount: Float
+  totalTaxAmount: Float
+  totalTipAmount: Float
+  orderStatus: OrderStatus
+  createdAt: AWSDateTime
+  closedAt: AWSDateTime
+  channel: String
+  userAgent: String
+  transactionId: String
+  cartId: ID
+  orderShipment: [OrderShipmentInput]
+}
+
+input CreatePaymentInput {
+  id: ID
+  paymentType: String
+  instrument: String
+  amount: String
+  paymentDate: AWSDate
+  paymentReference: String
+  settlementDate: AWSDate
+  transactionId: String
+}
+
+input CreatePaymentIntentInput {
+  paymentMethodType: String
+  currency: String
+  totalAmount: Float
+  userId: String
+}
+
+input CreateShipmentInput {
+  id: ID
+  assignedStoreId: ID
+  deliveryType: String
+  assignedStoreName: String
+  deliveryAddress: DeliveryAddressInput
+  shipmentStatus: ShipmentStatus
+  lineItems: [LineItemInput]
+  statusHistory: ShipmentStHistoryInput
+  updatedAt: AWSDateTime
+  updatedBy: String
+  subTotalAmount: Float
+  subTotalDeliveryCharges: Float
+  subTotalDiscount: Float
+  subTotalProductAmount: Float
+  subTotalTax: Float
+  subTotalTipAmount: Float
+}
+
+type CreateUserSocial {
+  customerProfile: CustomerProfile
+  customerContact: CustomerContact
+  customerAddress: CustomerAddress
+}
+
+input CreateUserSocialInput {
+  createCustomerProfileInput: CreateCustomerProfileInput
+  createCustomerContactInput: CreateCustomerContactInput
+  createCustomerAddressInput: CreateCustomerAddressInput
+}
+
+type CustomerAddress @aws_api_key @aws_cognito_user_pools {
+  id: ID
+  addressType: AddressType
+  phoneNumber: String
+  markDefault: Boolean
+  instructions: String
+  addrLine1: String!
+  addrLine2: String
+  customType: String
+  city: String!
+  addrState: String
+  postCode: String
+  latitude: Float
+  longitude: Float
+  country: String
+  firstName: String
+  middleName: String
+  lastName: String
+  customerContactId: ID
+  customerContact: CustomerContact
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type CustomerContact @aws_api_key @aws_cognito_user_pools {
+  id: ID
+  firstName: String!
+  middleName: String
+  lastName: String!
+  email: String
+  phoneNumber: String
+  contactCategory: ContactCategory
+  addressType: String
+  contactCustomType: String
+  occasionReminderContact: Boolean
+  deliveryAddress(
+    filter: ModelCustomerAddressFilterInput
+    sortDirection: ModelSortDirection
+    limit: Int
+    nextToken: String
+  ): ModelCustomerAddressConnection
+  occasions(
+    filter: ModelCustomerOccasionFilterInput
+    sortDirection: ModelSortDirection
+    limit: Int
+    nextToken: String
+  ): ModelCustomerOccasionConnection
+  userId: ID
+  defaultAddressId: ID
+  customerProfile: CustomerProfile
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type CustomerContactAddressOccasion {
+  customerContact: CustomerContact
+  customerAddress: ModelCustomerAddressConnection
+  customerOccasion: ModelCustomerOccasionConnection
+}
+
+type CustomerOccasion @aws_api_key @aws_cognito_user_pools {
+  id: ID
+  customerContactId: ID
+  customerContact: CustomerContact
+  occasionDate: String
+  occasionTitle: String
+  reminder: Boolean
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type CustomerPayment @aws_api_key @aws_cognito_user_pools {
+  id: ID
+  bankName: String
+  cardHolderName: String
+  cardNumber: String
+  expDate: String
+  postalCode: String
+  cardDefault: Boolean
+  userId: ID
+  customerProfile: CustomerProfile
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type CustomerProfile @aws_api_key @aws_cognito_user_pools {
+  id: ID
+  userId: ID!
+  firstName: String!
+  middleName: String
+  lastName: String!
+  deliveryToId: ID
+  deliveryTo: Boolean
+  deliveryToAddress: CustomerAddress
+  email: AWSEmail!
+  phoneNumber: String
+  profileImage: String
+  occasionReminderProfile: Boolean
+  subscribeToNotification: Boolean
+  orderLineitemReplacement: Boolean
+  customerRes: String
+  customerId: String
+  customerContact(
+    filter: ModelCustomerContactFilterInput
+    sortDirection: ModelSortDirection
+    limit: Int
+    nextToken: String
+  ): ModelCustomerContactConnection
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type DefaultPayment @aws_api_key @aws_cognito_user_pools {
+  paymentMethodId: String
+  customer: String
+  defaultPaymentMethod: String
+}
+
+input DefaultPaymentMethodInput {
+  paymentMethodId: String
+  customer: String
+  defaultPaymentMethod: String
+}
+
+input DeleteCartInput {
+  id: ID!
+}
+
+input DeleteCartShipmentInput {
+  id: ID!
+}
+
+input DeleteCustomerAddressInput {
+  id: ID!
+}
+
+input DeleteCustomerContactInput {
+  id: ID!
+}
+
+input DeleteCustomerOccasionInput {
+  id: ID!
+}
+
+input DeleteCustomerPaymentInput {
+  id: ID!
+}
+
+input DeleteCustomerProfileInput {
+  id: ID!
+}
+
+input DeleteDeviceTokenInput {
+  deviceToken: ID!
+}
+
+input DeleteOrderInput {
+  id: ID!
+}
+
+type DeletePayment @aws_api_key @aws_cognito_user_pools {
+  paymentMethodId: String
+  success: Boolean
+}
+
+input DeletePaymentInput {
+  id: ID!
+}
+
+input DeletePaymentMethodInput {
+  paymentMethodId: String
+  success: Boolean
+}
+
+input DeletePhoto {
+  fileName: String!
+  userId: String!
+}
+
+input DeleteShipmentInput {
+  id: ID!
+}
+
+enum Delivery {
+  Delivery_Local
+  Shipping_In_State
+  Shipping_Out_Of_State
+}
+
+type DeliveryAddress @aws_api_key @aws_cognito_user_pools {
+  addrLine1: String
+  addrLine2: String
+  city: String
+  state: String
+  country: String
+  postCode: String
+  latitude: Float
+  longitude: Float
+}
+
+input DeliveryAddressInput {
+  addrLine1: String
+  addrLine2: String
+  city: String
+  state: String
+  country: String
+  postCode: String
+  latitude: Float
+  longitude: Float
+}
+
+type DeliveryScope @aws_api_key @aws_cognito_user_pools {
+  serviceArea: Int
+  MinOrderSize: Int
+  deliveryType: [DeliveryType]
+}
+
+enum DeliveryType {
+  Own_Driver
+  Delivery_Partner
+  Both
+}
+
+type DeviceToken @aws_api_key @aws_cognito_user_pools {
+  deviceToken: ID
+  userId: ID
+  userType: UserType
+  userPool: UserPool
+  user: CustomerProfile
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Discount {
+  DiscountType: String
+  amount: Float
+}
+
+input DiscountInput {
+  DiscountType: String
+  amount: Float
+}
+
+enum GiftWrapping {
+  Free
+  Paid_Service
+  Not_available
+}
+
+enum Gifting {
+  Personal
+  Business
+}
+
+type Holiday {
+  startDate: AWSDate
+  endDate: AWSDate
+  Description: String
+}
+
+type LineItem @aws_api_key @aws_cognito_user_pools {
+  id: ID
+  productId: ID
+  productName: String
+  prodShortDesc: String
+  prodCategory: String
+  size: Int
+  uom: Int
+  itemInvalid: Boolean
+  qtyPurchased: Int
+  unitPrice: String
+  totalPrice: String
+  taxes: [Tax]
+  charges: [serviceCharge]
+  discounts: [Discount]
+  storeItemId: String
+  storeItemDesc: String
+}
+
+input LineItemInput {
+  productId: ID
+  productName: String
+  prodShortDesc: String
+  prodCategory: String
+  size: Int
+  uom: Int
+  qtyPurchased: Int
+  unitPrice: String
+  totalPrice: String
+  taxes: [TaxInput]
+  charges: [ServiceChargeInput]
+  discounts: [DiscountInput]
+  itemInvalid: Boolean
+  storeItemId: String
+  storeItemDesc: String
+}
+
+input ModelAddressTypeFilterInput {
+  eq: AddressType
+  ne: AddressType
+}
+
+input ModelBooleanFilterInput {
+  ne: Boolean
+  eq: Boolean
+}
+
+type ModelCarouselDataConnection @aws_api_key @aws_cognito_user_pools {
+  items: [CarouselData]
+}
+
+type ModelCartConnection @aws_api_key @aws_cognito_user_pools {
+  items: [Cart]
+  nextToken: String
+}
+
+input ModelCartFilterInput {
+  id: ModelIDFilterInput
+  cartItemId: ModelIDFilterInput
+  productId: ModelStringFilterInput
+  productName: ModelStringFilterInput
+  storeId: ModelStringFilterInput
+  storeName: ModelIDFilterInput
+  deliveryMode: ModelStringFilterInput
+  webPrice: ModelStringFilterInput
+  mrp: ModelStringFilterInput
+  quantity: ModelStringFilterInput
+  userId: ModelIDFilterInput
+  and: [ModelCartFilterInput]
+  or: [ModelCartFilterInput]
+  not: ModelCartFilterInput
+}
+
+type ModelCartShipmentConnection @aws_api_key @aws_cognito_user_pools {
+  items: [CartShipment]
+  nextToken: String
+}
+
+input ModelCartShipmentFilterInput {
+  id: ModelIDFilterInput
+  assignedStoreId: ModelIDFilterInput
+  deliveryType: ModelStringFilterInput
+  assignedStoreName: ModelStringFilterInput
+  shipmentStatus: ModelShipmentStatusFilterInput
+  updatedAt: ModelStringFilterInput
+  updatedBy: ModelStringFilterInput
+  subTotalAmount: ModelFloatFilterInput
+  subTotalDeliveryCharges: ModelFloatFilterInput
+  subTotalDiscount: ModelFloatFilterInput
+  subTotalProductAmount: ModelFloatFilterInput
+  subTotalTax: ModelFloatFilterInput
+  subTotalTipAmount: ModelFloatFilterInput
+  createdAt: ModelStringFilterInput
+  userId: ModelIDFilterInput
+  and: [ModelCartShipmentFilterInput]
+  or: [ModelCartShipmentFilterInput]
+  not: ModelCartShipmentFilterInput
+}
+
+input ModelContactCategoryFilterInput {
+  eq: ContactCategory
+  ne: ContactCategory
+}
+
+type ModelCustomerAddressConnection {
+  items: [CustomerAddress]
+  nextToken: String
+}
+
+input ModelCustomerAddressFilterInput {
+  id: ModelIDFilterInput
+  addressType: ModelAddressTypeFilterInput
+  phoneNumber: ModelStringFilterInput
+  markDefault: ModelBooleanFilterInput
+  instructions: ModelStringFilterInput
+  addrLine1: ModelStringFilterInput
+  addrLine2: ModelStringFilterInput
+  city: ModelStringFilterInput
+  state: ModelStringFilterInput
+  postCode: ModelStringFilterInput
+  latitude: ModelFloatFilterInput
+  longitude: ModelFloatFilterInput
+  firstName: ModelStringFilterInput
+  middleName: ModelStringFilterInput
+  lastName: ModelStringFilterInput
+  customerContactId: ModelIDFilterInput
+  and: [ModelCustomerAddressFilterInput]
+  or: [ModelCustomerAddressFilterInput]
+  not: ModelCustomerAddressFilterInput
+}
+
+type ModelCustomerContactConnection {
+  items: [CustomerContact]
+  nextToken: String
+}
+
+input ModelCustomerContactFilterInput {
+  id: ModelIDFilterInput
+  firstName: ModelStringFilterInput
+  middleName: ModelStringFilterInput
+  lastName: ModelStringFilterInput
+  contactCategory: ModelContactCategoryFilterInput
+  occasionReminderContact: ModelBooleanFilterInput
+  userId: ModelIDFilterInput
+  and: [ModelCustomerContactFilterInput]
+  or: [ModelCustomerContactFilterInput]
+  not: ModelCustomerContactFilterInput
+}
+
+type ModelCustomerOccasionConnection {
+  items: [CustomerOccasion]
+  nextToken: String
+}
+
+input ModelCustomerOccasionFilterInput {
+  id: ModelIDFilterInput
+  customerContactId: ModelIDFilterInput
+  occasionDate: ModelStringFilterInput
+  occasionTitle: ModelStringFilterInput
+  reminder: ModelBooleanFilterInput
+  and: [ModelCustomerOccasionFilterInput]
+  or: [ModelCustomerOccasionFilterInput]
+  not: ModelCustomerOccasionFilterInput
+}
+
+type ModelCustomerPaymentConnection {
+  items: [CustomerPayment]
+  nextToken: String
+}
+
+input ModelCustomerPaymentFilterInput {
+  id: ModelIDFilterInput
+  bankName: ModelStringFilterInput
+  cardHolderName: ModelStringFilterInput
+  cardNumber: ModelStringFilterInput
+  expDate: ModelStringFilterInput
+  postalCode: ModelStringFilterInput
+  cardDefault: ModelBooleanFilterInput
+  userId: ModelIDFilterInput
+  and: [ModelCustomerPaymentFilterInput]
+  or: [ModelCustomerPaymentFilterInput]
+  not: ModelCustomerPaymentFilterInput
+}
+
+type ModelCustomerProfileConnection {
+  items: [CustomerProfile]
+  nextToken: String
+}
+
+input ModelCustomerProfileFilterInput {
+  id: ModelIDFilterInput
+  userId: ModelIDFilterInput
+  firstName: ModelStringFilterInput
+  middleName: ModelStringFilterInput
+  lastName: ModelStringFilterInput
+  deliveryToId: ModelIDFilterInput
+  email: ModelStringFilterInput
+  profileImage: ModelStringFilterInput
+  phoneNumber: ModelStringFilterInput
+  occasionReminderProfile: ModelBooleanFilterInput
+  subscribeToNotification: ModelBooleanFilterInput
+  orderLineitemReplacement: ModelBooleanFilterInput
+  and: [ModelCustomerProfileFilterInput]
+  or: [ModelCustomerProfileFilterInput]
+  not: ModelCustomerProfileFilterInput
+}
+
+input ModelDateFilterInput {
+  ne: AWSDateTime
+  eq: AWSDateTime
+  le: AWSDateTime
+  lt: AWSDateTime
+  ge: AWSDateTime
+  gt: AWSDateTime
+  contains: AWSDateTime
+  notContains: AWSDateTime
+  between: [AWSDateTime]
+  beginsWith: AWSDateTime
+}
+
+type ModelDeviceTokenConnection {
+  items: [DeviceToken]
+  nextToken: String
+}
+
+input ModelDeviceTokenFilterInput {
+  deviceToken: ModelIDFilterInput
+  userId: ModelIDFilterInput
+  userType: ModelUserTypeFilterInput
+  userPool: ModelUserPoolFilterInput
+  and: [ModelDeviceTokenFilterInput]
+  or: [ModelDeviceTokenFilterInput]
+  not: ModelDeviceTokenFilterInput
+}
+
+input ModelFloatFilterInput {
+  ne: Float
+  eq: Float
+  le: Float
+  lt: Float
+  ge: Float
+  gt: Float
+  between: [Float]
+}
+
+input ModelIDFilterInput {
+  ne: ID
+  eq: ID
+  le: ID
+  lt: ID
+  ge: ID
+  gt: ID
+  contains: ID
+  notContains: ID
+  between: [ID]
+  beginsWith: ID
+}
+
+input ModelIntFilterInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+}
+
+type ModelOrderConnection @aws_api_key @aws_cognito_user_pools {
+  items: [Order]
+  nextToken: String
+}
+
+input ModelOrderFilterInput {
+  id: ModelIDFilterInput
+  userId: ModelIDFilterInput
+  totalAmount: ModelFloatFilterInput
+  totalDeliveryCharges: ModelFloatFilterInput
+  totalDiscount: ModelFloatFilterInput
+  totalProductAmount: ModelFloatFilterInput
+  totalTaxAmount: ModelFloatFilterInput
+  totalTipAmount: ModelFloatFilterInput
+  orderStatus: ModelOrderStatusFilterInput
+  createdAt: ModelDateFilterInput
+  closedAt: ModelStringFilterInput
+  channel: ModelStringFilterInput
+  userAgent: ModelStringFilterInput
+  transactionId: ModelStringFilterInput
+  cartId: ModelIDFilterInput
+  and: [ModelOrderFilterInput]
+  or: [ModelOrderFilterInput]
+  not: ModelOrderFilterInput
+}
+
+type ModelOrderShipmentConnection @aws_api_key @aws_cognito_user_pools {
+  items: [OrderShipment]
+  nextToken: String
+}
+
+input ModelOrderShipmentFilterInput {
+  id: ModelIDFilterInput
+  assignedStoreId: ModelIDFilterInput
+  deliveryType: ModelStringFilterInput
+  assignedStoreName: ModelStringFilterInput
+  shipmentStatus: ModelShipmentStatusFilterInput
+  updatedAt: ModelStringFilterInput
+  updatedBy: ModelStringFilterInput
+  subTotalAmount: ModelFloatFilterInput
+  subTotalDeliveryCharges: ModelFloatFilterInput
+  subTotalDiscount: ModelFloatFilterInput
+  subTotalProductAmount: ModelFloatFilterInput
+  subTotalTax: ModelFloatFilterInput
+  subTotalTipAmount: ModelFloatFilterInput
+  createdAt: ModelDateFilterInput
+  userId: ModelIDFilterInput
+  scheduledDeliveryDt: ModelIDFilterInput
+  scheduledTimeSlot: ModelIDFilterInput
+  and: [ModelCartShipmentFilterInput]
+  or: [ModelCartShipmentFilterInput]
+  not: ModelCartShipmentFilterInput
+}
+
+input ModelOrderStatusFilterInput {
+  eq: OrderStatus
+  ne: OrderStatus
+}
+
+type ModelPaymentConnection {
+  items: [Payment]
+  nextToken: String
+}
+
+input ModelPaymentFilterInput {
+  id: ModelIDFilterInput
+  paymentType: ModelStringFilterInput
+  instrument: ModelStringFilterInput
+  amount: ModelStringFilterInput
+  paymentDate: ModelStringFilterInput
+  paymentReference: ModelStringFilterInput
+  settlementDate: ModelStringFilterInput
+  transactionId: ModelStringFilterInput
+  and: [ModelPaymentFilterInput]
+  or: [ModelPaymentFilterInput]
+  not: ModelPaymentFilterInput
+}
+
+type ModelPriceAndAvailabilityConnection {
+  items: [PriceAndAvailability]
+  nextToken: String
+}
+
+input ModelPriceAndAvailabilityFilterInput {
+  id: ModelIDFilterInput
+  prodId: ModelIDFilterInput
+  storeId: ModelIDFilterInput
+  merchantAccountId: ModelIDFilterInput
+  price: ModelFloatFilterInput
+  splPrice: ModelFloatFilterInput
+  splPriceEndDate: ModelStringFilterInput
+  avlQuantity: ModelFloatFilterInput
+  priceUpdatedTime: ModelStringFilterInput
+  isAvailableForOnline: ModelBooleanFilterInput
+  createdAt: ModelStringFilterInput
+  updatedAt: ModelStringFilterInput
+  and: [ModelPriceAndAvailabilityFilterInput]
+  or: [ModelPriceAndAvailabilityFilterInput]
+  not: ModelPriceAndAvailabilityFilterInput
+}
+
+type ModelProductConnection {
+  items: [Product]
+  nextToken: String
+}
+
+input ModelProductFilterInput {
+  id: ModelIDFilterInput
+  prodName: ModelStringFilterInput
+  prodFullName: ModelStringFilterInput
+  prodShortDesc: ModelStringFilterInput
+  prodLongDesc: ModelStringFilterInput
+  prodCategory: ModelStringFilterInput
+  prodMajor: ModelStringFilterInput
+  prodMinor: ModelStringFilterInput
+  prodCategoryRef: ModelStringFilterInput
+  upc: ModelStringFilterInput
+  otherUPC: ModelStringFilterInput
+  manufacturer: ModelStringFilterInput
+  brandLine: ModelStringFilterInput
+  size: ModelStringFilterInput
+  uom: ModelStringFilterInput
+  container: ModelStringFilterInput
+  otherUOM: ModelIDFilterInput
+  imageFile: ModelStringFilterInput
+  images: ModelStringFilterInput
+  tags: ModelStringFilterInput
+  country: ModelStringFilterInput
+  region: ModelStringFilterInput
+  winery: ModelStringFilterInput
+  vintageKey: ModelStringFilterInput
+  Vintage: ModelStringFilterInput
+  abv: ModelStringFilterInput
+  sweetness: ModelStringFilterInput
+  flavour: ModelStringFilterInput
+  and: [ModelProductFilterInput]
+  or: [ModelProductFilterInput]
+  not: ModelProductFilterInput
+}
+
+type ModelSearchAddressConnection @aws_api_key @aws_cognito_user_pools {
+  items: [SearchAddress] @aws_api_key @aws_cognito_user_pools
+  nextToken: String
+}
+
+type ModelShipmentConnection {
+  items: [Shipment]
+  nextToken: String
+}
+
+input ModelShipmentFilterInput {
+  id: ModelIDFilterInput
+  assignedStoreId: ModelIDFilterInput
+  deliveryType: ModelStringFilterInput
+  assignedStoreName: ModelStringFilterInput
+  shipmentStatus: ModelShipmentStatusFilterInput
+  updatedAt: ModelStringFilterInput
+  updatedBy: ModelStringFilterInput
+  subTotalAmount: ModelFloatFilterInput
+  subTotalDeliveryCharges: ModelFloatFilterInput
+  subTotalDiscount: ModelFloatFilterInput
+  subTotalProductAmount: ModelFloatFilterInput
+  subTotalTax: ModelFloatFilterInput
+  subTotalTipAmount: ModelFloatFilterInput
+  and: [ModelShipmentFilterInput]
+  or: [ModelShipmentFilterInput]
+  not: ModelShipmentFilterInput
+}
+
+input ModelShipmentStatusFilterInput {
+  eq: ShipmentStatus
+  ne: ShipmentStatus
+}
+
+enum ModelSortDirection {
+  ASC
+  DESC
+}
+
+input ModelStringFilterInput {
+  ne: String
+  eq: String
+  le: String
+  lt: String
+  ge: String
+  gt: String
+  contains: String
+  notContains: String
+  between: [String]
+  beginsWith: String
+}
+
+input ModelUserPoolFilterInput {
+  eq: UserPool
+  ne: UserPool
+}
+
+input ModelUserTypeFilterInput {
+  eq: UserType
+  ne: UserType
+}
+
+type Mutation {
+  createUserSocial(input: CreateUserSocialInput!): CreateUserSocial
+  updateOrderShipmentNotification(
+    input: UpdateOrderShipmentInput!
+  ): OrderShipment @aws_api_key @aws_cognito_user_pools
+  checkoutWrapper(
+    getCartId: ID
+    searchStoreInput: checkoutSearchStoreInput
+    createPaymentIntentInput: checkoutPaymentIntentInput
+    taxInput: checkoutTaxInput
+    customerProfileInput: ID
+    paymentMethodsListInput: checkoutPaymentMethodsListInput
+  ): checkoutWrapperOutput
+  createDeviceToken(input: CreateDeviceTokenInput!): DeviceToken
+    @aws_api_key
+    @aws_cognito_user_pools
+  updateDeviceToken(input: UpdateDeviceTokenInput!): DeviceToken
+  deleteDeviceToken(input: DeleteDeviceTokenInput!): DeviceToken
+  createCustomerProfile(input: CreateCustomerProfileInput!): CustomerProfile
+  updateCustomerProfile(input: UpdateCustomerProfileInput!): CustomerProfile
+  deleteCustomerProfile(input: DeleteCustomerProfileInput!): CustomerProfile
+  createCustomerContact(input: CreateCustomerContactInput!): CustomerContact
+  updateCustomerContact(input: UpdateCustomerContactInput!): CustomerContact
+  deleteCustomerContact(input: DeleteCustomerContactInput!): CustomerContact
+  createCustomerOccasion(input: CreateCustomerOccasionInput!): CustomerOccasion
+  updateCustomerOccasion(input: UpdateCustomerOccasionInput!): CustomerOccasion
+  updateOccasionsReminder(
+    input: UpdateOccasionsReminderInput!
+  ): CustomerOccasion
+  deleteCustomerOccasion(input: DeleteCustomerOccasionInput!): CustomerOccasion
+  createCustomerAddress(input: CreateCustomerAddressInput!): CustomerAddress
+  updateCustomerAddress(input: UpdateCustomerAddressInput!): CustomerAddress
+  updateCustomerAddressesDefault(
+    input: UpdateCustomerAddressesDefaultInput!
+  ): CustomerAddress
+  deleteCustomerAddress(input: DeleteCustomerAddressInput!): CustomerAddress
+  createCustomerPayment(input: CreateCustomerPaymentInput!): CustomerPayment
+  updateCustomerPayment(input: UpdateCustomerPaymentInput!): CustomerPayment
+  deleteCustomerPayment(input: DeleteCustomerPaymentInput!): CustomerPayment
+  deletePhoto(input: DeletePhoto): String
+  createCustomerContactAddressOccasion(
+    input: CreateCustomerContactAddressOccasionInput!
+  ): CustomerContactAddressOccasion
+  createCart(input: CreateCartInput!): Cart @aws_api_key @aws_cognito_user_pools
+  updateCart(input: UpdateCartInput!): Cart @aws_api_key @aws_cognito_user_pools
+  deleteCart(input: DeleteCartInput!): Cart @aws_api_key @aws_cognito_user_pools
+  createOrder(input: CreateOrderInput!): Order
+    @aws_api_key
+    @aws_cognito_user_pools
+  addOrder(input: CreateOrderInput!): Order @aws_api_key @aws_cognito_user_pools
+  updateOrder(input: UpdateOrderInput!): Order
+    @aws_api_key
+    @aws_cognito_user_pools
+  deleteOrder(input: DeleteOrderInput!): Order
+    @aws_api_key
+    @aws_cognito_user_pools
+  createShipment(input: CreateShipmentInput!): Shipment
+  updateShipment(input: UpdateShipmentInput!): Shipment
+  deleteShipment(input: DeleteShipmentInput!): Shipment
+  createPayment(input: CreatePaymentInput!): Payment
+  updatePayment(input: UpdatePaymentInput!): Payment
+  deletePayment(input: DeletePaymentInput!): Payment
+  createCartShipment(input: CreateCartShipmentInput!): CartShipment
+    @aws_api_key
+    @aws_cognito_user_pools
+  updateCartShipment(input: UpdateCartShipmentInput!): CartShipment
+    @aws_api_key
+    @aws_cognito_user_pools
+  deleteCartShipment(input: DeleteCartShipmentInput!): CartShipment
+    @aws_api_key
+    @aws_cognito_user_pools
+  calculateTax(input: [OrderShipmentInput]): ModelOrderShipmentConnection
+    @aws_api_key
+    @aws_cognito_user_pools
+  createPaymentIntent(input: CreatePaymentIntentInput!): PaymentIntent
+    @aws_api_key
+    @aws_cognito_user_pools
+  validateURL(input: ValidateURLInput!): ValidateURL
+    @aws_api_key
+    @aws_cognito_user_pools
+  paymentMethodsList(input: PaymentMethodsListInput!): PaymentMethods
+    @aws_api_key
+    @aws_cognito_user_pools
+  deletePaymentMethod(input: DeletePaymentMethodInput!): DeletePayment
+    @aws_api_key
+    @aws_cognito_user_pools
+  defaultPaymentMethod(input: DefaultPaymentMethodInput!): DefaultPayment
+    @aws_api_key
+    @aws_cognito_user_pools
+  saveCustomerCard(input: SaveCardInput!): SaveCard
+    @aws_api_key
+    @aws_cognito_user_pools
+  rejectionNotificationUpdate(input: UpdateOrderShipmentInput!): OrderShipment
+    @aws_api_key
+    @aws_cognito_user_pools
+  getPDFDownload(userId: String!, shipmentId: String!): String
+    @aws_api_key
+    @aws_cognito_user_pools
+  updateOrderShipment(input: UpdateOrderShipmentInput!): OrderShipment
+    @aws_api_key
+    @aws_cognito_user_pools
+  createUserWest(
+    username: String!
+    password: String!
+    firstName: String!
+    lastName: String!
+    email: String!
+    phoneNumber: String!
+  ): String @aws_api_key @aws_cognito_user_pools
+  updateUserWest(
+    username: String!
+    password: String
+    type: String!
+    email: String
+    given_name: String
+    family_name: String
+    phone_number: String
+  ): String
+}
+
+type Order @aws_api_key @aws_cognito_user_pools {
+  id: ID
+  userId: ID
+  totalAmount: Float
+  totalDeliveryCharges: Float
+  totalDiscount: Float
+  totalProductAmount: Float
+  totalTaxAmount: Float
+  totalTipAmount: Float
+  orderStatus: OrderStatus
+  createdAt: AWSDateTime!
+  closedAt: AWSDateTime!
+  channel: String
+  userAgent: String
+  transactionId: String
+  cartId: ID
+  updatedAt: AWSDateTime
+  orderShipment: ModelOrderShipmentConnection
+}
+
+type OrderFulfilling {
+  pickUp: [PickUp]
+  delivery: [Delivery]
+  gifting: Gifting
+}
+
+type OrderLineItem @aws_api_key @aws_cognito_user_pools {
+  id: ID
+  productId: ID
+  productName: String
+  prodShortDesc: String
+  prodCategory: String
+  size: Int
+  uom: Int
+  qtyPurchased: Int
+  unitPrice: String
+  totalPrice: String
+  taxes: [Tax]
+  charges: [serviceCharge]
+  discounts: [Discount]
+}
+
+input OrderLineItemInput {
+  id: ID
+  productId: ID
+  productName: String
+  prodShortDesc: String
+  prodCategory: String
+  size: Int
+  uom: Int
+  itemInvalid: Boolean
+  qtyPurchased: Int
+  unitPrice: String
+  totalPrice: String
+  taxes: [TaxInput]
+  charges: [ServiceChargeInput]
+  discounts: [DiscountInput]
+  storeItemId: String
+  storeItemDesc: String
+}
+
+type OrderShipment @aws_api_key @aws_cognito_user_pools {
+  id: ID
+  assignedStoreId: ID
+  orderId: ID
+  deliveryType: String
+  assignedStoreName: String
+  deliveryAddress: DeliveryAddress
+  shipmentStatus: ShipmentStatus
+  orderLineItems: [OrderLineItem]
+  statusHistory: ShipmentStHistory
+  scheduledDeliveryDt: String
+  scheduledTimeSlot: String
+  updatedAt: AWSDateTime
+  updatedBy: String
+  subTotalAmount: Float
+  subTotalDeliveryCharges: Float
+  subTotalDiscount: Float
+  subTotalProductAmount: Float
+  subTotalTax: Float
+  subTotalTipAmount: Float
+  createdAt: AWSDateTime!
+  userId: ID
+  actionType: String
+  calculatedTax: Float
+  paymentIntentId: String
+  paymentIntentRes: String
+  rejectionMsg: String
+  isUpdated: Boolean
+}
+
+input OrderShipmentInput {
+  id: ID
+  assignedStoreId: ID
+  orderId: ID
+  deliveryType: String
+  assignedStoreName: String
+  deliveryAddress: DeliveryAddressInput
+  storeAddress: StoreAddressInput
+  shipmentStatus: ShipmentStatus
+  orderLineItems: [OrderLineItemInput]
+  statusHistory: ShipmentStHistoryInput
+  scheduledDeliveryDt: String
+  scheduledTimeSlot: String
+  updatedAt: AWSDateTime
+  updatedBy: String
+  subTotalAmount: Float
+  subTotalDeliveryCharges: Float
+  subTotalDiscount: Float
+  subTotalProductAmount: Float
+  subTotalTax: Float
+  subTotalTipAmount: Float
+  createdAt: AWSDateTime
+  userId: ID
+  actionType: String
+  paymentIntentId: String
+  paymentIntentRes: String
+  isUpdated: Boolean
+}
+
+enum OrderStatus {
+  Created
+  Open
+  Fulfilled
+  Partial_Fulfilled
+  Cancelled
+}
+
+type Payment @aws_api_key @aws_cognito_user_pools {
+  id: ID
+  paymentType: String
+  instrument: String
+  amount: String
+  paymentDate: AWSDate
+  paymentReference: String
+  settlementDate: AWSDate
+  transactionId: String
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type PaymentIntent @aws_api_key @aws_cognito_user_pools {
+  publicKey: String
+  clientSecret: String
+  id: String
+}
+
+type PaymentMethods @aws_api_key @aws_cognito_user_pools {
+  paymentMethods: String
+  defaultPaymentMethodId: String
+}
+
+input PaymentMethodsListInput {
+  customerId: String
+  defaultPaymentMethodId: String
+}
+
+enum PickUp {
+  Not_available
+  In_Store
+  Curb_Side
+}
+
+type PriceAndAvailability @aws_cognito_user_pools @aws_api_key {
+  id: ID!
+  prodId: ID!
+  storeId: ID!
+  merchantAccountId: ID!
+  price: Float
+  storeItemId: String
+  storeItemDesc: String
+  splPrice: Float
+  splPriceEndDate: AWSDateTime
+  avlQuantity: Float
+  priceUpdatedTime: AWSDateTime
+  isAvailableForOnline: Boolean
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+###################
+######################################################################################################Custom additions for Product
+######################################################################################################Product Master Database
+type Product @aws_api_key @aws_cognito_user_pools {
+  id: ID!
+  prodName: String!
+  prodFullName: String!
+  prodShortDesc: String!
+  prodLongDesc: String!
+  prodCategory: String!
+  prodMajor: String!
+  prodMinor: String!
+  prodCategoryRef: String!
+  upc: String
+  otherUPC: [String]
+  manufacturer: String
+  brandLine: String
+  size: String
+  uom: String
+  container: String
+  otherUOM: [ID]
+  imageFile: String
+  images: [String]
+  tags: [String]
+  country: String
+  region: String
+  winery: String
+  vintageKey: String
+  Vintage: String
+  abv: String
+  sweetness: String
+  flavour: String
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ProductNew @aws_api_key @aws_cognito_user_pools {
+  id: ID!
+  prodName: String!
+  prodFullName: String!
+  prodShortDesc: String!
+  prodLongDesc: String!
+  prodCategory: String!
+  prodMajor: String!
+  prodMinor: String!
+  prodCategoryRef: String!
+  upc: String
+  otherUPC: [String]
+  manufacturer: String
+  brandLine: String
+  size: String
+  uom: String
+  container: String
+  otherUOM: [ID]
+  imageFile: String
+  images: [String]
+  tags: [String]
+  country: String
+  region: String
+  winery: String
+  vintageKey: String
+  Vintage: String
+  abv: String
+  sweetness: String
+  flavour: String
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+  price: Float
+}
+
+type Query {
+  getOrderByUserId(userId: String!): ModelOrderConnection
+  # getOrderByUserId(
+  ######### 	userId: ID!,
+  ######### 	filter: ModelOrderFilterInput,
+  ######### 	limit: Int,
+  ######### 	nextToken: String
+  ######### ): ModelOrderConnection
+  getCustomerProfile(userId: ID!): CustomerProfile
+  getCartShipment(id: ID!): CartShipment @aws_api_key @aws_cognito_user_pools
+  listCartShipments(
+    filter: ModelCartShipmentFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelCartShipmentConnection
+  getOrderShipment(id: ID!): OrderShipment @aws_api_key @aws_cognito_user_pools
+  listOrderShipments(
+    filter: ModelOrderShipmentFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelOrderShipmentConnection
+  listCustomerProfiles(
+    filter: ModelCustomerProfileFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelCustomerProfileConnection
+  getCustomerContact(id: ID!): CustomerContact
+  listCustomerContacts(
+    filter: ModelCustomerContactFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelCustomerContactConnection
+  getCustomerOccasion(id: ID!): CustomerOccasion
+  listCustomerOccasions(
+    filter: ModelCustomerOccasionFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelCustomerOccasionConnection
+  getCustomerAddress(id: ID!): CustomerAddress
+  listCustomerAddresss(
+    filter: ModelCustomerAddressFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelCustomerAddressConnection
+  getCustomerPayment(id: ID!): CustomerPayment
+  listCustomerPayments(
+    filter: ModelCustomerPaymentFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelCustomerPaymentConnection
+  getDeviceToken(id: ID!): DeviceToken
+  listDeviceTokens(
+    filter: ModelDeviceTokenFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelDeviceTokenConnection
+  getCart(id: ID!): Cart @aws_api_key @aws_cognito_user_pools
+  listCarts(
+    filter: ModelCartFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelCartConnection @aws_api_key @aws_cognito_user_pools
+  getOrder(id: ID!): Order
+  listOrders(
+    filter: ModelOrderFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelOrderConnection
+  getShipment(id: ID!): Shipment
+  listShipments(
+    filter: ModelShipmentFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelShipmentConnection
+  getPayment(id: ID!): Payment
+  listPayments(
+    filter: ModelPaymentFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelPaymentConnection @aws_api_key @aws_cognito_user_pools
+  listCarouselData: ModelCarouselDataConnection
+    @aws_api_key
+    @aws_cognito_user_pools
+  getCarouselData(promoName: String!): CarouselData
+  CustomerCartByCustomerCartId(
+    id: ID
+    sortDirection: ModelSortDirection
+    filter: ModelOrderFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelOrderConnection
+  customerUserByUserId(
+    userId: ID
+    sortDirection: ModelSortDirection
+    filter: ModelCustomerProfileFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelCustomerProfileConnection
+  deviceTokenByUserId(
+    deviceToken: ID
+    sortDirection: ModelSortDirection
+    filter: ModelDeviceTokenFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelDeviceTokenConnection
+  userIdByDevicetoken(
+    userId: ID
+    sortDirection: ModelSortDirection
+    filter: ModelDeviceTokenFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelDeviceTokenConnection
+  customerUserByEmail(
+    email: AWSEmail
+    sortDirection: ModelSortDirection
+    filter: ModelCustomerProfileFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelCustomerProfileConnection
+  customerUserByPhoneNumber(
+    phoneNumber: String
+    sortDirection: ModelSortDirection
+    filter: ModelCustomerProfileFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelCustomerProfileConnection
+  CustomerContactsByCustomerProfileId(
+    userId: ID
+    sortDirection: ModelSortDirection
+    filter: ModelCustomerContactFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelCustomerContactConnection
+  CustomerOccasionByCustomerContactId(
+    id: ID
+    sortDirection: ModelSortDirection
+    filter: ModelCustomerOccasionFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelCustomerOccasionConnection
+  CustomerAddressByCustomerContactId(
+    id: ID
+    sortDirection: ModelSortDirection
+    filter: ModelCustomerAddressFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelCustomerAddressConnection
+  CustomerPaymentByCustomerProfileId(
+    userId: ID
+    sortDirection: ModelSortDirection
+    filter: ModelCustomerPaymentFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelCustomerPaymentConnection
+  getS3SignedURL(
+    userId: String!
+    fileName: String!
+    requestType: String!
+    contentType: String!
+  ): s3signedURL
+  searchProducts(
+    filter: SearchableProductFilterInput
+    sort: SearchableProductSortInput
+    limit: Int
+    nextToken: String
+    from: Int
+  ): SearchableProductConnection @aws_api_key @aws_cognito_user_pools
+  searchProductsLambda(
+    filter: SearchableProductFilterInput
+    sort: SearchableProductSortInput
+    limit: Int
+    nextToken: String
+    from: Int
+    merchantAccountId: String
+    distance: Int
+    lat: Float
+    lon: Float
+    maxPrice: Float
+    minPrice: Float
+  ): SearchableProductConnectionNew @aws_api_key @aws_cognito_user_pools
+  searchPriceAndAvailabilitys(
+    filter: SearchablePriceAndAvailabilityFilterInput
+    sort: SearchablePriceAndAvailabilitySortInput
+    limit: Int
+    nextToken: String
+    from: Int
+    lat: Float
+    lon: Float
+    distance: Int
+  ): SearchablePriceAndAvailabilityConnection
+    @aws_api_key
+    @aws_cognito_user_pools
+  searchStores(
+    filter: SearchableStoreFilterInput
+    sort: SearchableStoreSortInput
+    limit: Int
+    nextToken: String
+    from: Int
+    lat: Float!
+    lon: Float!
+    distance: Int!
+  ): SearchableStoreConnection @aws_api_key @aws_cognito_user_pools
+  searchAddress(input: SearchAddressInput!): ModelSearchAddressConnection
+    @aws_api_key
+    @aws_cognito_user_pools
+  getCartByUserId(userId: String!): ModelCartConnection
+    @aws_api_key
+    @aws_cognito_user_pools
+  listOrderShipmentByStoreId(storeId: ID!): ModelOrderShipmentConnection
+  listOrderShipmentsByUserId(
+    userId: ID!
+    filter: ModelOrderShipmentFilterInput
+  ): ModelOrderShipmentConnection
+  searchStore(
+    distance: Int!
+    lat: Float!
+    lon: Float!
+  ): SearchableStoreConnection
+  getStore(id: ID!): Store @aws_api_key @aws_cognito_user_pools
+  listOrdersByUserId(
+    userId: String!
+    filter: ModelOrderFilterInput
+    limit: Int
+    nextToken: String
+  ): ModelOrderConnection @aws_api_key @aws_cognito_user_pools
+}
+
+type SaveCard @aws_api_key @aws_cognito_user_pools {
+  userId: String
+  setUpIntent: String
+}
+
+input SaveCardInput {
+  userId: String
+  setUpIntent: String
+}
+
+type SearchAddress @aws_api_key @aws_cognito_user_pools {
+  street_line: String
+  secondary: String
+  city: String
+  state: String
+  zipcode: String
+  entries: Int
+}
+
+input SearchAddressInput {
+  includeCities: [String]
+  includeStates: [String]
+  searchStr: String!
+}
+
+input SearchableBooleanFilterInput {
+  eq: Boolean
+  ne: Boolean
+}
+
+input SearchableFloatFilterInput {
+  ne: Float
+  gt: Float
+  lt: Float
+  gte: Float
+  lte: Float
+  eq: Float
+  range: [Float]
+}
+
+input SearchableIDFilterInput {
+  ne: ID
+  gt: ID
+  lt: ID
+  gte: ID
+  lte: ID
+  eq: ID
+  match: ID
+  matchPhrase: ID
+  matchPhrasePrefix: ID
+  multiMatch: ID
+  exists: Boolean
+  wildcard: ID
+  regexp: ID
+  range: [ID]
+}
+
+input SearchableIntFilterInput {
+  ne: Int
+  gt: Int
+  lt: Int
+  gte: Int
+  lte: Int
+  eq: Int
+  range: [Int]
+}
+
+type SearchablePriceAndAvailabilityConnection
+  @aws_api_key
+  @aws_cognito_user_pools {
+  items: [PriceAndAvailability] @aws_api_key @aws_cognito_user_pools
+  nextToken: String
+  total: Int
+}
+
+input SearchablePriceAndAvailabilityFilterInput {
+  id: SearchableIDFilterInput
+  prodId: SearchableIDFilterInput
+  storeId: SearchableIDFilterInput
+  merchantAccountId: SearchableIDFilterInput
+  price: SearchableFloatFilterInput
+  splPrice: SearchableFloatFilterInput
+  splPriceEndDate: SearchableStringFilterInput
+  avlQuantity: SearchableFloatFilterInput
+  priceUpdatedTime: SearchableStringFilterInput
+  isAvailableForOnline: Boolean
+  createdAt: SearchableStringFilterInput
+  updatedAt: SearchableStringFilterInput
+  and: [SearchablePriceAndAvailabilityFilterInput]
+  or: [SearchablePriceAndAvailabilityFilterInput]
+  not: SearchablePriceAndAvailabilityFilterInput
+}
+
+input SearchablePriceAndAvailabilitySortInput {
+  field: SearchablePriceAndAvailabilitySortableFields
+  direction: SearchableSortDirection
+}
+
+enum SearchablePriceAndAvailabilitySortableFields {
+  id
+  prodId
+  storeId
+  merchantAccountId
+  price
+  splPrice
+  splPriceEndDate
+  avlQuantity
+  priceUpdatedTime
+  isAvailableForOnline
+  createdAt
+  updatedAt
+}
+
+type SearchableProductConnection @aws_api_key @aws_cognito_user_pools {
+  items: [Product] @aws_api_key @aws_cognito_user_pools
+  brand: [AggRes] @aws_api_key @aws_cognito_user_pools
+  majorType: [AggRes] @aws_api_key @aws_cognito_user_pools
+  country: [AggRes] @aws_api_key @aws_cognito_user_pools
+  manufacturer: [AggRes] @aws_api_key @aws_cognito_user_pools
+  container: [AggRes] @aws_api_key @aws_cognito_user_pools
+  ProdCategory: [AggRes] @aws_api_key @aws_cognito_user_pools
+  ProdFullName: [AggRes] @aws_api_key @aws_cognito_user_pools
+  ProdMajor: [AggRes] @aws_api_key @aws_cognito_user_pools
+  ProdMinor: [AggRes] @aws_api_key @aws_cognito_user_pools
+  nextToken: String
+  total: Int
+}
+
+type SearchableProductConnectionNew @aws_api_key @aws_cognito_user_pools {
+  items: [ProductNew] @aws_api_key @aws_cognito_user_pools
+  brand: [AggRes] @aws_api_key @aws_cognito_user_pools
+  majorType: [AggRes] @aws_api_key @aws_cognito_user_pools
+  country: [AggRes] @aws_api_key @aws_cognito_user_pools
+  manufacturer: [AggRes] @aws_api_key @aws_cognito_user_pools
+  container: [AggRes] @aws_api_key @aws_cognito_user_pools
+  ProdCategory: [AggRes] @aws_api_key @aws_cognito_user_pools
+  prodMajor: [AggRes] @aws_api_key @aws_cognito_user_pools
+  prodMinor: [AggRes] @aws_api_key @aws_cognito_user_pools
+  nextToken: String
+  total: Int
+}
+
+input SearchableProductFilterInput {
+  id: SearchableIDFilterInput
+  prodName: SearchableStringFilterInput
+  prodFullName: SearchableStringFilterInput
+  prodShortDesc: SearchableStringFilterInput
+  prodLongDesc: SearchableStringFilterInput
+  prodCategory: SearchableStringFilterInput
+  prodMajor: SearchableStringFilterInput
+  prodMinor: SearchableStringFilterInput
+  majorType: SearchableStringFilterInput
+  prodCategoryRef: SearchableStringFilterInput
+  upc: SearchableStringFilterInput
+  otherUPC: SearchableStringFilterInput
+  manufacturer: SearchableStringFilterInput
+  brandLine: SearchableStringFilterInput
+  size: SearchableStringFilterInput
+  uom: SearchableStringFilterInput
+  container: SearchableStringFilterInput
+  otherUOM: SearchableIDFilterInput
+  imageFile: SearchableStringFilterInput
+  images: SearchableStringFilterInput
+  tags: SearchableStringFilterInput
+  country: SearchableStringFilterInput
+  region: SearchableStringFilterInput
+  winery: SearchableStringFilterInput
+  vintageKey: SearchableStringFilterInput
+  Vintage: SearchableStringFilterInput
+  abv: SearchableStringFilterInput
+  sweetness: SearchableStringFilterInput
+  flavour: SearchableStringFilterInput
+  and: [SearchableProductFilterInput]
+  or: [SearchableProductFilterInput]
+  not: SearchableProductFilterInput
+}
+
+input SearchableProductSortInput {
+  field: SearchableProductSortableFields
+  direction: SearchableSortDirection
+}
+
+enum SearchableProductSortableFields {
+  id
+  prodName
+  prodFullName
+  prodShortDesc
+  prodLongDesc
+  prodCategory
+  prodMajor
+  prodMinor
+  prodCategoryRef
+  upc
+  otherUPC
+  manufacturer
+  brandLine
+  size
+  uom
+  container
+  otherUOM
+  imageFile
+  images
+  tags
+  country
+  region
+  winery
+  vintageKey
+  Vintage
+  abv
+  sweetness
+  flavour
+}
+
+enum SearchableSortDirection {
+  asc
+  desc
+}
+
+type SearchableStoreConnection @aws_api_key @aws_cognito_user_pools {
+  items: [Store] @aws_api_key @aws_cognito_user_pools
+  nextToken: String
+  total: Int
+}
+
+input SearchableStoreFilterInput {
+  id: SearchableStringFilterInput
+  storeRefId: SearchableStringFilterInput
+  storeName: SearchableStringFilterInput
+  address: SearchableStringFilterInput
+  storeStatus: SearchableStringFilterInput
+  statusReason: SearchableStringFilterInput
+  storePhoneNumber: SearchableStringFilterInput
+  isPaused: SearchableBooleanFilterInput
+  isDeliveryPaused: ModelBooleanFilterInput
+  isShippingPaused: ModelBooleanFilterInput
+  isPickupPaused: ModelBooleanFilterInput
+  storeEmail: SearchableStringFilterInput
+  businessHours: SearchableStringFilterInput
+  deliveryHours: SearchableStringFilterInput
+  scheduleHours: SearchableStringFilterInput
+  storeClosing: SearchableIntFilterInput
+  orderFulfilling: SearchableStringFilterInput
+  deliveryScope: SearchableStringFilterInput
+  giftWrapping: SearchableStringFilterInput
+  carriersAllowed: SearchableStringFilterInput
+  specialProdCat: SearchableStringFilterInput
+  holidays: SearchableStringFilterInput
+  and: [SearchableStoreFilterInput]
+  or: [SearchableStoreFilterInput]
+  not: SearchableStoreFilterInput
+}
+
+input SearchableStoreSortInput {
+  field: SearchableStoreSortableFields
+  direction: SearchableSortDirection
+}
+
+enum SearchableStoreSortableFields {
+  id
+  storeRefId
+  storeName
+  address
+  storeStatus
+  statusReason
+  storePhoneNumber
+  storeEmail
+  businessHours
+  deliveryHours
+  scheduleHours
+  storeClosing
+  orderFulfilling
+  deliveryScope
+  giftWrapping
+  carriersAllowed
+  specialProdCat
+  holidays
+}
+
+input SearchableStringFilterInput {
+  ne: String
+  gt: String
+  lt: String
+  gte: String
+  lte: String
+  eq: String
+  match: String
+  matchPhrase: String
+  matchPhrasePrefix: String
+  multiMatch: String
+  exists: Boolean
+  wildcard: String
+  regexp: String
+  range: [String]
+}
+
+input ServiceChargeInput {
+  chargeType: String
+  chargeAmount: String
+  taxes: [TaxInput]
+}
+
+type Shipment @aws_api_key @aws_cognito_user_pools {
+  id: ID
+  assignedStoreId: ID
+  deliveryType: String
+  assignedStoreName: String
+  deliveryAddress: DeliveryAddress
+  shipmentStatus: ShipmentStatus
+  lineItems: [LineItem]
+  statusHistory: ShipmentStHistory
+  updatedAt: AWSDateTime!
+  updatedBy: String
+  payment: [Payment]
+  subTotalAmount: Float
+  subTotalDeliveryCharges: Float
+  subTotalDiscount: Float
+  subTotalProductAmount: Float
+  subTotalTax: Float
+  subTotalTipAmount: Float
+  createdAt: AWSDateTime!
+}
+
+type ShipmentStHistory {
+  fromStatus: String
+  toStatus: String
+  updatedAt: AWSDateTime
+  updatedBy: String
+}
+
+input ShipmentStHistoryInput {
+  fromStatus: String
+  toStatus: String
+  updatedAt: AWSDateTime
+  updatedBy: String
+}
+
+enum ShipmentStatus {
+  Placed
+  Accepted
+  Picked
+  Delivered
+  Cancelled
+  Rejected
+  ShelfToCounter
+  Billed
+  Packing
+  Dispatched
+  Shipped
+}
+
+type Store @aws_api_key @aws_cognito_user_pools {
+  id: ID!
+  storeRefId: String
+  storeName: String!
+  address: Address
+  storeStatus: StoreStatus!
+  statusReason: String
+  statusUpdatedAt: AWSDateTime
+  statusUpdatedBy: String
+  storePhotos: String
+  storePhoneNumber: String!
+  storeEmail: String
+  businessHours: servingHours
+  deliveryHours: servingHours
+  scheduleHours: deliveryHrsSchedule
+  storeClosing: Int
+  orderFulfilling: OrderFulfilling
+  deliveryScope: DeliveryScope
+  giftWrapping: [GiftWrapping]
+  carriersAllowed: [String]
+  specialProdCat: [String]
+  holidays: [Holiday]
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime
+  distance: Float
+  timeReq: Float
+}
+
+type StoreAddress @aws_api_key @aws_cognito_user_pools {
+  addrLine1: String
+  addrLine2: String
+  city: String
+  state: String
+  country: String
+  postCode: String
+  latitude: Float
+  longitude: Float
+}
+
+input StoreAddressInput {
+  addrLine1: String
+  addrLine2: String
+  city: String
+  state: String
+  country: String
+  postCode: String
+  latitude: Float
+  longitude: Float
+}
+
+enum StoreStatus {
+  NEW
+  PENDING
+  ACTIVE
+  DISABLED
+  ONHOLD
+}
+
+type Subscription {
+  onCreateDeviceToken: DeviceToken
+    @aws_subscribe(mutations: ["createDeviceToken"])
+  onUpdateDeviceToken: DeviceToken
+    @aws_subscribe(mutations: ["updateDeviceToken"])
+  onDeleteDeviceToken: DeviceToken
+    @aws_subscribe(mutations: ["deleteDeviceToken"])
+  onCreateCustomerProfile: CustomerProfile
+    @aws_subscribe(mutations: ["createCustomerProfile"])
+  onUpdateCustomerProfile: CustomerProfile
+    @aws_subscribe(mutations: ["updateCustomerProfile"])
+  onDeleteCustomerProfile: CustomerProfile
+    @aws_subscribe(mutations: ["deleteCustomerProfile"])
+  onCreateCustomerContact: CustomerContact
+    @aws_subscribe(mutations: ["createCustomerContact"])
+  onUpdateCustomerContact: CustomerContact
+    @aws_subscribe(mutations: ["updateCustomerContact"])
+  onDeleteCustomerContact: CustomerContact
+    @aws_subscribe(mutations: ["deleteCustomerContact"])
+  onCreateCustomerOccasion: CustomerOccasion
+    @aws_subscribe(mutations: ["createCustomerOccasion"])
+  onUpdateCustomerOccasion: CustomerOccasion
+    @aws_subscribe(mutations: ["updateCustomerOccasion"])
+  onDeleteCustomerOccasion: CustomerOccasion
+    @aws_subscribe(mutations: ["deleteCustomerOccasion"])
+  onCreateCustomerAddress: CustomerAddress
+    @aws_subscribe(mutations: ["createCustomerAddress"])
+  onUpdateCustomerAddress: CustomerAddress
+    @aws_subscribe(mutations: ["updateCustomerAddress"])
+  onDeleteCustomerAddress: CustomerAddress
+    @aws_subscribe(mutations: ["deleteCustomerAddress"])
+  onCreateCustomerPayment: CustomerPayment
+    @aws_subscribe(mutations: ["createCustomerPayment"])
+  onUpdateCustomerPayment: CustomerPayment
+    @aws_subscribe(mutations: ["updateCustomerPayment"])
+  onDeleteCustomerPayment: CustomerPayment
+    @aws_subscribe(mutations: ["deleteCustomerPayment"])
+  onCreateCart: Cart
+    @aws_subscribe(mutations: ["createCart"])
+    @aws_api_key
+    @aws_cognito_user_pools
+  onUpdateCart: Cart @aws_subscribe(mutations: ["updateCart"])
+  onDeleteCart: Cart @aws_subscribe(mutations: ["deleteCart"])
+  onCreateOrder: Order
+    @aws_subscribe(mutations: ["createOrder"])
+    @aws_auth
+    @aws_cognito_user_pools
+  onUpdateOrder: Order @aws_subscribe(mutations: ["updateOrder"])
+  onDeleteOrder: Order @aws_subscribe(mutations: ["deleteOrder"])
+  onCreateShipment: Shipment @aws_subscribe(mutations: ["createShipment"])
+  onUpdateShipment: Shipment @aws_subscribe(mutations: ["updateShipment"])
+  onDeleteShipment: Shipment @aws_subscribe(mutations: ["deleteShipment"])
+  onCreatePayment: Payment @aws_subscribe(mutations: ["createPayment"])
+  onUpdatePayment: Payment @aws_subscribe(mutations: ["updatePayment"])
+  onDeletePayment: Payment @aws_subscribe(mutations: ["deletePayment"])
+  onCreateCartShipment: CartShipment
+    @aws_subscribe(mutations: ["createCartShipment"])
+  onUpdateCartShipment: CartShipment
+    @aws_subscribe(mutations: ["updateCartShipment"])
+  onDeleteCartShipment: CartShipment
+    @aws_subscribe(mutations: ["deleteCartShipment"])
+  onRejectionNotificationUpdate(userId: ID!): OrderShipment
+    @aws_subscribe(mutations: ["rejectionNotificationUpdate"])
+    @aws_auth
+    @aws_api_key
+    @aws_cognito_user_pools
+  onUpdateOrderShipmentNotification(userId: ID!): OrderShipment
+    @aws_subscribe(mutations: ["updateOrderShipmentNotification"])
+    @aws_auth
+    @aws_api_key
+    @aws_cognito_user_pools
+}
+
+type Tags @aws_api_key @aws_cognito_user_pools {
+  Key: String
+  Value: String
+}
+
+type Tax @aws_api_key @aws_cognito_user_pools {
+  taxType: String
+  amount: Float
+}
+
+input TaxInput {
+  taxType: String
+  amount: Float
+}
+
+input UpdateCartInput {
+  id: ID!
+  userId: ID
+  anonymousId: ID
+  belongsTo: String
+  totalAmount: Float
+  totalDeliveryCharges: Float
+  totalDiscount: Float
+  totalProductAmount: Float
+  totalTaxAmount: Float
+  totalTipAmount: Float
+  orderStatus: OrderStatus
+  createdAt: AWSDateTime
+  closedAt: AWSDateTime
+  channel: String
+  userAgent: String
+  cartShipment: [CartShipmentInput]
+  transactionId: String
+  updatedAt: AWSDateTime
+}
+
+input UpdateCartShipmentInput {
+  id: ID!
+  assignedStoreId: ID
+  cartId: ID
+  deliveryType: String
+  assignedStoreName: String
+  deliveryAddress: DeliveryAddressInput
+  shipmentStatus: ShipmentStatus
+  lineItems: [LineItemInput]
+  statusHistory: ShipmentStHistoryInput
+  updatedAt: AWSDateTime
+  updatedBy: String
+  subTotalAmount: Float
+  subTotalDeliveryCharges: Float
+  subTotalDiscount: Float
+  subTotalProductAmount: Float
+  subTotalTax: Float
+  subTotalTipAmount: Float
+  createdAt: AWSDateTime
+  userId: ID
+}
+
+input UpdateCustomerAddressInput {
+  id: ID!
+  addressType: AddressType
+  phoneNumber: String
+  markDefault: Boolean
+  instructions: String
+  addrLine1: String
+  addrLine2: String
+  city: String
+  customType: String
+  country: String
+  addrState: String
+  postCode: String
+  latitude: Float
+  longitude: Float
+  firstName: String
+  middleName: String
+  lastName: String
+  customerContactId: ID
+}
+
+input UpdateCustomerAddressesDefaultInput {
+  customerContactId: String!
+  id: String!
+  markDefault: String!
+}
+
+input UpdateCustomerContactInput {
+  id: ID!
+  firstName: String
+  middleName: String
+  lastName: String
+  email: String
+  phoneNumber: String
+  contactCustomType: String
+  contactCategory: ContactCategory
+  occasionReminderContact: Boolean
+  userId: ID
+  defaultAddressId: ID
+}
+
+input UpdateCustomerOccasionInput {
+  id: ID!
+  customerContactId: ID
+  occasionDate: String
+  occasionTitle: String
+  reminder: Boolean
+}
+
+input UpdateCustomerPaymentInput {
+  id: ID!
+  bankName: String
+  cardHolderName: String
+  cardNumber: String
+  expDate: String
+  postalCode: String
+  cardDefault: Boolean
+  userId: ID
+}
+
+input UpdateCustomerProfileInput {
+  id: ID
+  userId: ID!
+  firstName: String
+  middleName: String
+  lastName: String
+  deliveryToId: ID
+  email: AWSEmail
+  phoneNumber: String
+  profileImage: String
+  occasionReminderProfile: Boolean
+  subscribeToNotification: Boolean
+  orderLineitemReplacement: Boolean
+  customerRes: String
+  customerId: String
+}
+
+input UpdateDeviceTokenInput {
+  deviceToken: ID
+  userId: ID
+  userType: UserType
+  userPool: UserPool
+  updatedAt: AWSDateTime!
+}
+
+input UpdateOccasionsReminderInput {
+  customerContactId: String!
+  reminder: String!
+}
+
+input UpdateOrderInput {
+  id: ID!
+  userId: ID
+  totalAmount: Float
+  totalDeliveryCharges: Float
+  totalDiscount: Float
+  totalProductAmount: Float
+  totalTaxAmount: Float
+  totalTipAmount: Float
+  orderStatus: OrderStatus
+  createdAt: AWSDateTime
+  closedAt: AWSDateTime
+  channel: String
+  userAgent: String
+  transactionId: String
+  cartId: ID
+  orderShipment: [OrderShipmentInput]
+}
+
+input UpdateOrderShipmentInput {
+  id: ID
+  assignedStoreId: ID
+  orderId: ID
+  deliveryType: String
+  assignedStoreName: String
+  deliveryAddress: DeliveryAddressInput
+  shipmentStatus: ShipmentStatus
+  orderLineItems: [OrderLineItemInput]
+  statusHistory: ShipmentStHistoryInput
+  updatedAt: AWSDateTime
+  updatedBy: String
+  subTotalAmount: Float
+  subTotalDeliveryCharges: Float
+  subTotalDiscount: Float
+  subTotalProductAmount: Float
+  subTotalTax: Float
+  subTotalTipAmount: Float
+  createdAt: AWSDateTime
+  userId: ID
+  actionType: String
+  paymentIntentId: String
+  paymentIntentRes: String
+  rejectionMsg: String
+  isUpdated: Boolean
+}
+
+input UpdatePaymentInput {
+  id: ID!
+  paymentType: String
+  instrument: String
+  amount: String
+  paymentDate: AWSDate
+  paymentReference: String
+  settlementDate: AWSDate
+  transactionId: String
+}
+
+input UpdateShipmentInput {
+  id: ID!
+  assignedStoreId: ID
+  deliveryType: String
+  assignedStoreName: String
+  deliveryAddress: DeliveryAddressInput
+  shipmentStatus: ShipmentStatus
+  lineItems: [LineItemInput]
+  statusHistory: ShipmentStHistoryInput
+  updatedAt: AWSDateTime
+  updatedBy: String
+  subTotalAmount: Float
+  subTotalDeliveryCharges: Float
+  subTotalDiscount: Float
+  subTotalProductAmount: Float
+  subTotalTax: Float
+  subTotalTipAmount: Float
+}
+
+enum UserPool {
+  Merchant
+  Customer
+  Operations
+  Delivery
+}
+
+enum UserType {
+  Anonymous
+  SignedIn
+}
+
+type ValidateURL @aws_api_key @aws_cognito_user_pools {
+  isValid: Boolean
+}
+
+input ValidateURLInput {
+  referralUrl: String
+  storeId: String
+}
+
+input checkoutPaymentIntentInput {
+  input: CreatePaymentIntentInput
+}
+
+input checkoutPaymentMethodsListInput {
+  input: PaymentMethodsListInput
+}
+
+input checkoutSearchStoreInput {
+  filter: SearchableStoreFilterInput
+  sort: SearchableStoreSortInput
+  limit: Int
+  nextToken: String
+  from: Int
+  lat: Float!
+  lon: Float!
+  distance: Int!
+}
+
+input checkoutTaxInput {
+  input: [OrderShipmentInput]
+}
+
+type checkoutWrapperOutput {
+  cart: Cart
+  stores: SearchableStoreConnection
+  paymentIntent: PaymentIntent
+  taxCalculation: ModelOrderShipmentConnection
+  customerProfile: CustomerProfile
+  paymentMethodsList: PaymentMethods
+}
+
+type deliveryHrsSchedule @aws_api_key @aws_cognito_user_pools {
+  Mon: String
+  Tue: String
+  Wed: String
+  Thu: String
+  Fri: String
+  Sat: String
+  Sun: String
+}
+
+input deliveryHrsScheduleInput {
+  Mon: String
+  Tue: String
+  Wed: String
+  Thu: String
+  Fri: String
+  Sat: String
+  Sun: String
+}
+
+type s3signedURL {
+  signedURL: String
+  fileName: String
+}
+
+type serviceCharge {
+  chargeType: String
+  chargeAmount: String
+  taxes: [Tax]
+}
+
+type servingHours @aws_api_key @aws_cognito_user_pools {
+  Mon: [String]
+  Tue: [String]
+  Wed: [String]
+  Thu: [String]
+  Fri: [String]
+  Sat: [String]
+  Sun: [String]
+}

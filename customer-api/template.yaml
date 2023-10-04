@@ -1,0 +1,397 @@
+################################################
+# Template for Customer-api with AppSync
+################################################
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev2
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 1
+    Description: CloudWatch Logs retention period for Lambda functions
+  EventBusName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: EventBridge Event Bus Name
+  RejectionEventBus:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: EventBridge Event Bus Name
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+  ElasticSearchDomainEndpoint:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Elastic Search Endpoint
+  QueryLimit:
+    Type: Number
+    Default: 20
+    Description: Maximum number of items to return from a single query
+  CustomerpoolId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Customer userpool id
+  CriticalSnsTopicName:
+    Type: String
+    Description: SNS Topic Name    
+################################################
+# Globals
+################################################
+Globals:
+  Function:
+    Runtime: nodejs16.x
+    Handler: index.handler
+    Layers:
+      - !Ref NodeLayerArn
+    Timeout: 30
+    Tracing: Active
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        EVENT_BUS_NAME: !Ref EventBusName
+        POWERTOOLS_SERVICE_NAME: users
+        POWERTOOLS_TRACE_DISABLED: "false"
+        LOG_LEVEL: !Ref LogLevel
+################################################
+# Resources
+################################################
+Resources:
+  ##################################
+  # GRAPHQL API                    #
+  ##################################
+  CustomerApi:
+    Type: AWS::AppSync::GraphQLApi
+    Properties:
+      Name: !Sub ${Application}-${Environment}-${Module}-customerapi
+      AuthenticationType: AMAZON_COGNITO_USER_POOLS
+      UserPoolConfig:
+        # AppIdClientRegex: !Sub "ecommerce-${Environment}-frontend-api.*"
+        AwsRegion: !Ref AWS::Region
+        # UserPoolId: !Sub '{{resolve:ssm:/${Application}/${Environment}/platform/customeruserpool/id}}'
+        UserPoolId: !Ref CustomerpoolId
+        DefaultAction: ALLOW
+      AdditionalAuthenticationProviders:
+        - AuthenticationType: API_KEY
+
+      LogConfig:
+        CloudWatchLogsRoleArn: !GetAtt ApiLoggingRole.Arn
+        FieldLogLevel: ALL
+      XrayEnabled: true
+  CustomerApi4XXAppsyncAlarm:
+      Type: 'AWS::CloudWatch::Alarm'
+      Properties:
+        AlarmActions:
+        - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${CriticalSnsTopicName}'
+        AlarmDescription: !Sub '4xx errrors observed for appsync api ${Application}-${Environment}-${Module}-customerapi.Please check logs for further troubleshoot.'
+        ComparisonOperator: GreaterThanThreshold
+        Dimensions:
+        - Name: GraphQLAPIId
+          Value: !Ref CustomerApi
+        EvaluationPeriods: 1
+        MetricName: '4XXError'
+        Namespace: 'AWS/AppSync'
+        OKActions:
+        - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${CriticalSnsTopicName}'
+        Period: 300
+        Statistic: Sum
+        Threshold: 10
+  CustomerApi5XXAppsyncAlarm:
+      Type: 'AWS::CloudWatch::Alarm'
+      Properties:
+        AlarmActions:
+        - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${CriticalSnsTopicName}'
+        AlarmDescription: !Sub '5xx errors observed for appsync api ${Application}-${Environment}-${Module}-customerapi.Please check logs for further troubleshoot.'
+        ComparisonOperator: GreaterThanThreshold
+        Dimensions:
+        - Name: GraphQLAPIId
+          Value: !Ref CustomerApi
+        EvaluationPeriods: 1
+        MetricName: '5XXError'
+        Namespace: 'AWS/AppSync'
+        OKActions:
+        - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${CriticalSnsTopicName}'
+        Period: 300
+        Statistic: Sum
+        Threshold: 10
+  CustomerApiLatencyAppsyncAlarm:
+      Type: 'AWS::CloudWatch::Alarm'
+      Properties:
+        AlarmActions:
+        - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${CriticalSnsTopicName}'
+        AlarmDescription: !Sub 'Latency observed  observed for appsync api ${Application}-${Environment}-${Module}-customerapi.Please check logs for further troubleshoot.'
+        ComparisonOperator: GreaterThanThreshold
+        Dimensions:
+        - Name: GraphQLAPIId
+          Value: !Ref CustomerApi
+        EvaluationPeriods: 3
+        MetricName: 'Latency'
+        Namespace: 'AWS/AppSync'
+        OKActions:
+        - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${CriticalSnsTopicName}'
+        Period: 60
+        Statistic: Average
+        Threshold: 10000                
+  CustomerApiClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub ${Application}-${Environment}-${Module}-customerapi-client
+      UserPoolId: !Ref CustomerpoolId
+      AllowedOAuthFlowsUserPoolClient: true
+      CallbackURLs:
+        - http://localhost:3000
+        - https://oauth.pstmn.io/v1/callback
+      GenerateSecret: false
+      AllowedOAuthFlows:
+        - code
+        - implicit
+      AllowedOAuthScopes:
+        - phone
+        - email
+        - openid
+        - profile
+      SupportedIdentityProviders:
+        - COGNITO
+      RefreshTokenValidity: 30
+
+  CustomerUserPoolClientParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${Application}/${Environment}/${Module}/customeruserpoolclient/id
+      Type: String
+      Value: !Ref CustomerApiClient
+      Tags:
+        Environment: !Ref Environment
+        Application: !Ref Application
+        Module: !Ref Module
+
+  ApiLoggingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CloudWatchLogsAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/appsync/apis/${CustomerApi.ApiId}"
+      RetentionInDays: !Ref RetentionInDays
+
+  ApiArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${Application}/${Environment}/${Module}/customerapi/arn
+      Type: String
+      Value: !GetAtt CustomerApi.Arn
+
+  ApiIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${Application}/${Environment}/${Module}/customerapi/id
+      Type: String
+      Value: !GetAtt CustomerApi.ApiId
+
+  CustomerApiKey:
+    Type: AWS::AppSync::ApiKey
+    Properties:
+      ApiId: !GetAtt CustomerApi.ApiId
+
+  ApiUrlParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${Application}/${Environment}/${Module}/customerapi/url
+      Type: String
+      Value: !GetAtt CustomerApi.GraphQLUrl
+
+  CustomerApiKey:
+    Type: AWS::AppSync::ApiKey
+    Properties:
+      ApiId: !GetAtt CustomerApi.ApiId
+
+  Schema:
+    Type: AWS::AppSync::GraphQLSchema
+    Properties:
+      ApiId: !GetAtt CustomerApi.ApiId
+      DefinitionS3Location: "resources/schema.graphql"
+
+  ##############################################################
+  # Data Source for ElasticSearch Will be used by all Search resolvers
+  ##############################################################
+
+  ElasticSearchDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !GetAtt CustomerApi.ApiId
+      Name: ElasticSearchDomain
+      Type: AMAZON_ELASTICSEARCH
+      ServiceRoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/${Application}-${Environment}-ES-Role
+      ElasticsearchConfig:
+        AwsRegion: !Sub ${AWS::Region}
+        Endpoint: !Ref ElasticSearchDomainEndpoint
+
+  ##############################################################
+  # API Destinations and other dependencies for event bridge
+  ##############################################################
+  ApiDestination:
+    Type: AWS::Events::ApiDestination
+    Properties:
+      ConnectionArn: !GetAtt ApiDestinationUpdateNotificationConnection.Arn
+      HttpMethod: POST
+      InvocationEndpoint: !GetAtt CustomerApi.GraphQLUrl
+      Name: !Sub ${Application}-${Environment}-Rejection-ApiDestination
+
+  ApiDestinationConnection:
+    Type: AWS::Events::Connection
+    Properties:
+      AuthorizationType: API_KEY
+      Name: !Sub ${Application}-${Environment}-Rejection-ApiConnection
+      AuthParameters:
+        ApiKeyAuthParameters:
+          ApiKeyName: x-api-key
+          ApiKeyValue: !GetAtt CustomerApiKey.ApiKey
+
+  EventBridgeRole: ## Service role to invoke Api Destination
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: eventbridge-invoke-api-destination
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: events:InvokeApiDestination
+                Resource:
+                  - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:api-destination/${ApiDestination}/*"
+
+  RouteToAppSyncRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref RejectionEventBus
+      EventPattern:
+        source:
+          - !Sub ${Application}-${Environment}-ManageOrderShipment-Function
+        detail-type:
+          - Rejection Notification
+      Targets:
+        - Id: appsync-rejection-notification
+          Arn: !GetAtt ApiDestination.Arn
+          RoleArn: !GetAtt EventBridgeRole.Arn
+          InputTransformer:
+            InputPathsMap:
+              rejectionMsg: "$.detail.input.rejectionMsg"
+              shipmentStatus: "$.detail.input.shipmentStatus"
+              userId: "$.detail.input.userId"
+            InputTemplate: |
+              {
+                "query": "mutation rejectionNotificationUpdate($input: UpdateOrderShipmentInput!) {rejectionNotificationUpdate(input: $input) {shipmentStatus rejectionMsg userId}}",
+                "operationName": "rejectionNotificationUpdate",
+                "variables": {
+                  "input": {
+                    "shipmentStatus": <shipmentStatus>,
+                    "rejectionMsg": <rejectionMsg>,
+                    "userId": <userId>
+                  }
+                }
+              }
+
+  ApiDestinationUpdateNotification:
+    Type: AWS::Events::ApiDestination
+    Properties:
+      ConnectionArn: !GetAtt ApiDestinationUpdateNotificationConnection.Arn
+      HttpMethod: POST
+      InvocationEndpoint: !GetAtt CustomerApi.GraphQLUrl
+      Name: !Sub ${Application}-${Environment}-Update-ApiDestination
+
+  ApiDestinationUpdateNotificationConnection:
+    Type: AWS::Events::Connection
+    Properties:
+      AuthorizationType: API_KEY
+      Name: !Sub ${Application}-${Environment}-Update-ApiConnection
+      AuthParameters:
+        ApiKeyAuthParameters:
+          ApiKeyName: x-api-key
+          ApiKeyValue: !GetAtt CustomerApiKey.ApiKey
+
+  EventBridgeRole: ## Service role to invoke Api Destination
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: eventbridge-invoke-api-destination
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: events:InvokeApiDestination
+                Resource:
+                  - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:api-destination/${ApiDestinationUpdateNotification}/*"
+
+  RouteToAppSyncRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref RejectionEventBus
+      EventPattern:
+        source:
+          - !Sub ${Application}-${Environment}-ManageOrderShipment-Function
+        detail-type:
+          - Rejection Notification
+      Targets:
+        - Id: appsync-rejection-notification
+          Arn: !GetAtt ApiDestination.Arn
+          RoleArn: !GetAtt EventBridgeRole.Arn
+          InputTransformer:
+            InputPathsMap:
+              id: "$.detail.input.id"
+              orderId: "$.detail.input.orderId"
+            InputTemplate: |
+              {
+                "query": "mutation rejectionNotificationUpdate($input: UpdateOrderShipmentInput!) {rejectionNotificationUpdate(input: $input) {orderId id}}",
+                "operationName": "rejectionNotificationUpdate",
+                "variables": {
+                  "input": {
+                    "id": <id>,
+                    "orderId": <orderId>
+                  }
+                }
+              }

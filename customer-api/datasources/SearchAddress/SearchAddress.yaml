@@ -1,0 +1,119 @@
+################################################
+# Template for Search Address
+################################################
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 30
+    Description: CloudWatch Logs retention period for Lambda functions
+  ApiId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Api Id
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+
+Globals:
+  Function:
+    Runtime: nodejs16.x
+    Handler: index.handler
+    Layers:
+      - !Ref NodeLayerArn
+    Timeout: 30
+    Tracing: Active
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        LOG_LEVEL: !Ref LogLevel
+
+################################################
+# Resources
+################################################
+Resources:
+  ########################
+  # Search Address  #
+  ########################
+  SearchAddressFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SearchAddressFunctionAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource:
+                  - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Application}-${Environment}-ManageSearchAddress-Function
+                  - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Application}-${Environment}-SearchAddress-Function
+                  - arn:aws:lambda:us-east-1:409907184267:function:spirits-prd-Customer-SearchAddress-Function
+
+  # SearchAddressDataSource:
+  #   Type: AWS::AppSync::DataSource
+  #   Properties:
+  #     ApiId: !Ref ApiId
+  #     Name: SearchAddress
+  #     Type: AMAZON_ELASTICSEARCH
+  #     ServiceRoleArn: !GetAtt SearchAddressFunctionRole.Arn
+  #     ElasticsearchConfig:
+  #       AwsRegion: !Sub ${AWS::Region}
+  #       Endpoint: "https://search-spirits-dev-es-5rxmmgmdh4kmqjbrk566m2cmqq.us-east-1.es.amazonaws.com"
+
+  SearchAddressDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !Ref ApiId
+      Name: SearchAddress
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt SearchAddressFunctionRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Application}-${Environment}-Customer-SearchAddress-Function
+
+  SearchAddressResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: !GetAtt SearchAddressDataSource.Name
+      FieldName: searchAddress
+      TypeName: Query
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "searchAddress",
+            "body": $util.toJson($context.args)
+          }
+        }
+
+      ResponseMappingTemplate: |
+        #if( $ctx.error )
+        $util.error($ctx.error.message, $ctx.error.type)
+        #else
+        $util.toJson($ctx.result)
+        #end

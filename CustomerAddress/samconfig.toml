@@ -1,0 +1,67 @@
+version = 0.1
+
+[dev]
+[dev.deploy]
+[dev.deploy.parameters]
+stack_name = "spirits-dev-customer-customeraddress"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-dev-customer-customeraddress"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"dev\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/dev/shared/nodelayer/arn\""
+
+[devDep]
+[devDep.deploy]
+[devDep.deploy.parameters]
+stack_name = "spirits-dev-customer-customeraddress-dep"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-dev-customer-customeraddress-dep"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"dev\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/dev/shared/nodelayer/arn\""
+
+[sit]
+[sit.deploy]
+[sit.deploy.parameters]
+stack_name = "spirits-sit-customer-customeraddress"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-sit-customer-customeraddress"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"sit\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/sit/shared/nodelayer/arn\""
+
+[sitDep]
+[sitDep.deploy]
+[sitDep.deploy.parameters]
+stack_name = "spirits-sit-customer-customeraddress-dep"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-sit-customer-customeraddress-dep"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"sit\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/sit/shared/nodelayer/arn\""
+
+[prd]
+[prd.deploy]
+[prd.deploy.parameters]
+stack_name = "spirits-prd-customer-customeraddress"
+s3_bucket = "409907184267-spirits-prd-samdeploy"
+s3_prefix = "spirits-prd-customer-customeraddress"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"prd\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/prd/shared/nodelayer/arn\""
+
+[prdDep]
+[prdDep.deploy]
+[prdDep.deploy.parameters]
+stack_name = "spirits-prd-customer-customeraddress-dep"
+s3_bucket = "409907184267-spirits-prd-samdeploy"
+s3_prefix = "spirits-prd-customer-customeraddress-dep"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customerapi\" Environment=\"prd\" LogLevel=\"INFO\" RetentionInDays=\"30\" NodeLayerArn=\"/spirits/prd/shared/nodelayer/arn\""

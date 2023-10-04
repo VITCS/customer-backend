@@ -1,0 +1,124 @@
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev2
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 1
+    Description: CloudWatch Logs retention period for Lambda functions
+  EventBusName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: EventBridge Event Bus Name
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+  QueryLimit:
+    Type: Number
+    Default: 20
+    Description: Maximum number of items to return from a single query
+  ApiId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: API Id
+  SearchItem:
+    Type: String
+    Description: Search Item i.e. Table to search
+    Default: ${Appplication}-${Environment}-Store
+##############################################################
+# Data Sources for Store
+##############################################################
+Resources:
+
+  ###################################################################################
+  # Get Merchant Account for the Store
+  ##################################################################################
+  GetMerchantAccountResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: MerchantAccountTable
+      TypeName: Store
+      FieldName: merchantAccount
+      RequestMappingTemplate: !Sub |
+        #if( $util.isNull($ctx.source.merchantAccountId) )
+          #return
+        #else
+        {
+              "version": "2018-05-29",
+              "operation": "GetItem",
+              "key": {
+                  "id": $util.dynamodb.toDynamoDBJson($util.defaultIfNullOrBlank($ctx.source.merchantAccountId, "___xamznone____"))
+            }
+          }
+        #end
+      ResponseMappingTemplate: |
+        #if( $ctx.error )
+        $util.error($ctx.error.message, $ctx.error.type)
+        #else
+        $util.toJson($ctx.result)
+        #end
+
+  ###################################################################################
+  # Get Merchant User for the Store
+  ##################################################################################
+
+  GetMerchantUserResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !Ref ApiId
+      DataSourceName: MerchantUserStoreTable
+      TypeName: Store
+      FieldName: users
+      RequestMappingTemplate: !Sub |
+        #if( $util.isNull($ctx.source.id) )
+          #return
+        #else
+        {
+          "version" : "2017-02-28",
+          "operation" : "Query",
+          "query" : {
+            ## Provide a query expression. **
+            "expression": "storeId = :storeId",
+            "expressionValues" : {
+              ":storeId" : $util.dynamodb.toDynamoDBJson($ctx.source.id)
+            }
+          },
+          "index": "byStore",
+          "select": "ALL_ATTRIBUTES",
+        }
+        #end
+      ResponseMappingTemplate: |
+        #if( $ctx.error )
+        $util.error($ctx.error.message, $ctx.error.type)
+        #else
+        $util.toJson($ctx.result)
+        #end
+  SignedURLAppSyncRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SignedURLFunctionAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Application}-${Environment}-S3SignedURL-Function
+

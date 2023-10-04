@@ -1,0 +1,46 @@
+version = 0.1
+
+[dev]
+[dev.deploy]
+[dev.deploy.parameters]
+stack_name = "spirits-dev-customer-api"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-dev-customer-api"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customer\" Environment=\"dev\" LogLevel=\"INFO\" RetentionInDays=\"30\" EventBusName=\"/spirits/dev/platform/eventbus/arn\" NodeLayerArn=\"/spirits/dev/shared/nodelayer/arn\" ElasticSearchDomainEndpoint=\"/spirits/dev/elasticsearch/domain/endpoint\" QueryLimit=\"20\" CustomerpoolId=\"/spirits/dev/platform/customeruserpool/id\" RejectionEventBus=\"/spirits/dev/rejectionEventBus/name\" CriticalSnsTopicName=\"sns-cloudwatch-alerts\""
+
+
+[dev2]
+[dev2.deploy]
+[dev2.deploy.parameters]
+stack_name = "spirits-dev2-customer-api"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-dev2-customer-api"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customer\" Environment=\"dev2\" LogLevel=\"INFO\" RetentionInDays=\"30\" EventBusName=\"/spirits/dev2/platform/eventbus/arn\" NodeLayerArn=\"/spirits/dev2/shared/nodelayer/arn\" ElasticSearchDomainEndpoint=\"/spirits/dev/elasticsearch/domain/endpoint\" QueryLimit=\"20\" CustomerpoolId=\"/spirits/dev2/platform/customeruserpool/id\" RejectionEventBus=\"/spirits/dev2/rejectionEventBus/name\" CriticalSnsTopicName=\"sns-cloudwatch-alerts\""
+
+[sit]
+[sit.deploy]
+[sit.deploy.parameters]
+stack_name = "spirits-sit-customer-api"
+s3_bucket = "843219620739-spirits-dev-samdeploy"
+s3_prefix = "spirits-sit-customer-api"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customer\" Environment=\"sit\" LogLevel=\"INFO\" RetentionInDays=\"30\" EventBusName=\"/spirits/sit/platform/eventbus/arn\" NodeLayerArn=\"/spirits/sit/shared/nodelayer/arn\" ElasticSearchDomainEndpoint=\"/spirits/sit/elasticsearch/domain/endpoint\" QueryLimit=\"20\" CustomerpoolId=\"/spirits/sit/platform/customeruserpool/id\" RejectionEventBus=\"/spirits/sit/rejectionEventBus/name\"  CriticalSnsTopicName=\"sns-cloudwatch-alerts\""
+
+[prd]
+[prd.deploy]
+[prd.deploy.parameters]
+stack_name = "spirits-prd-customer-api"
+s3_bucket = "409907184267-spirits-prd-samdeploy"
+s3_prefix = "spirits-prd-customer-api"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Application=\"spirits\" Module=\"customer\" Environment=\"prd\" LogLevel=\"INFO\" RetentionInDays=\"30\" EventBusName=\"/spirits/prd/platform/eventbus/arn\" NodeLayerArn=\"/spirits/prd/shared/nodelayer/arn\" ElasticSearchDomainEndpoint=\"/spirits/prd/elasticsearch/domain/endpoint\" QueryLimit=\"20\" CustomerpoolId=\"/spirits/prd/platform/customeruserpool/id\" RejectionEventBus=\"/spirits/prd/rejectionEventBus/name\" CriticalSnsTopicName=\"sns-cloudwatch-alerts\""
