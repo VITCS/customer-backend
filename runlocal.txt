@@ -1,0 +1,1 @@
+sam local invoke ManageStore --parameter-overrides "Application=\"spirits\" Module=\"metchantapi\" Environment=\"dev\" NodeLayerArn=\"arn:aws:lambda:us-east-1:446678851215:layer:spirits-dev-shared-nodelayer:5\""

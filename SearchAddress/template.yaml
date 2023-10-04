@@ -1,0 +1,101 @@
+################################################
+# Template for Tables - CustomerAddress
+################################################
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+################################################
+# Parameters
+################################################
+Parameters:
+  Application:
+    Type: String
+  Module:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev2
+    Description: Environment name
+  LogLevel:
+    Type: String
+    Default: INFO
+  RetentionInDays:
+    Type: Number
+    Default: 30
+    Description: CloudWatch Logs retention period for Lambda functions
+  NodeLayerArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Node Layer NodeDependenciesLayer ARN
+  # KeyName:
+  #   Type: AWS::SSM::Parameter::Value<String>
+  #   Description: Key for smarty streets API
+
+Globals:
+  Function:
+    Runtime: nodejs16.x
+    Handler: index.handler
+    Layers:
+      - !Ref NodeLayerArn
+    Timeout: 5
+    Tracing: Active
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        LOG_LEVEL: !Ref LogLevel
+
+################################################
+# Resources
+################################################
+Resources:
+  ################################################
+  # Functions
+  ################################################
+  ManageSearchAddress:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Application}-${Environment}-ManageSearchAddress-Function
+      Handler: manage_searchaddress.handler
+      CodeUri: ./src
+      MemorySize: 768
+      Tags:
+        Application: !Ref Application
+        Environment: !Ref Environment
+        Module: !Ref Module
+      Environment:
+        Variables:
+          Application: !Ref Application
+          # KEY_NAME: !Ref KeyName
+          LOG_LEVEL: !Ref LogLevel
+
+      Policies:
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Application}/smartyStreetsSecret/authId"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Application}/smartyStreetsSecret/authToken"
+
+  ManageSearchAddressLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ManageSearchAddress}"
+      RetentionInDays: !Ref RetentionInDays
+
+  # SmartyStreetsSecret:
+  #   Type: AWS::SecretsManager::Secret
+  #   Properties:
+  #     Name: !Sub ${Application}-${Environment}-SmartyStreetsSecretKey
+  #     Description: Secret embedded key for the smarty streets
+  #     SecretString: '{"secret": "113535260796111408"}'
+
+  # SmartyStreetsSecret:
+  #   Type: AWS::SSM::Parameter
+  #   Properties:
+  #     Name: !Sub /${Application}/${Environment}/SmartyStreetsSecretKey
+  #     Type: String
+  #     Description: Secret embedded key for the smarty streets
+  #     Value: "{{resolve:ssm-secure:SmartyStreetsSecret:113535260796111408}}"
